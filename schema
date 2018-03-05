@@ -1,0 +1,8 @@
+USERS (
+    id,
+    name,
+    gender,
+    birthday,
+    phone,
+    email,
+)
