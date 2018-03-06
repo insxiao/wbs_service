@@ -11,7 +11,7 @@ libraryDependencies += guice
 libraryDependencies += "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.2" % Test withSources() withJavadoc()
 libraryDependencies += "com.typesafe.play" %% "play-slick" % "3.0.0" withSources() withJavadoc()
 libraryDependencies += "org.postgresql" % "postgresql" % "42.2.1" withSources() withJavadoc()
-
+libraryDependencies += evolutions
 // Adds additional packages into Twirl
 //TwirlKeys.templateImports += "com.affaprop.weibs.controllers._"
 

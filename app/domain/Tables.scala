@@ -7,42 +7,43 @@ import slick.jdbc.PostgresProfile.api._
 import slick.lifted.{ForeignKeyQuery, ProvenShape}
 
 
-implicit val genderColumnType = MappedColumnType.base[Gender, String](gender => if (gender == Male) "M" else "F", s => if (s == "M") Male else Female)
+object Tables {
 
-/**
-  * Users table row class
-  */
-class Users(tag: Tag) extends Table[(Long, String, Gender, String, String, Date)](tag, "USERS") {
-  def id = column[Long]("USER_ID", O.PrimaryKey)
+  implicit val genderColumnType = MappedColumnType.base[Gender, String](gender => if (gender == Male) "M" else "F", s => if (s == "M") Male else Female)
 
-  def name = column[String]("USERNAME")
+  /**
+    * Users table row class
+    */
+  class Users(tag: Tag) extends Table[(Long, String, Gender, String, String, Date)](tag, "USERS") {
+    def id = column[Long]("USER_ID", O.PrimaryKey)
 
-  def gender = column[Gender]("GENDER")
+    def name = column[String]("USERNAME")
 
-  def password = column[String]("PASSWORD")
+    def gender = column[Gender]("GENDER")
 
-  def email = column[String]("EMAIL")
+    def password = column[String]("PASSWORD")
 
-  def birthday = column[Date]("BIRTHDAY")
+    def email = column[String]("EMAIL")
 
-  override def * : ProvenShape[(Long, String, Gender, String, String, Date)] = (id, name, gender, password, email, birthday)
+    def birthday = column[Date]("BIRTHDAY")
+
+    override def * : ProvenShape[(Long, String, Gender, String, String, Date)] = (id, name, gender, password, email, birthday)
+  }
+
+  /**
+    * Table row for micro blog
+    */
+  class MicroBlog(tag: Tag) extends Table[(Long, Long, String, Date)](tag, "MICRO_BLOG") {
+    override def * : ProvenShape[(Long, Long, String, Date)] = (blogId, userId, content, postDate)
+
+    def blogId = column[Long]("BLOG_ID", O.PrimaryKey)
+
+    def content = column[String]("CONTENT")
+
+    def postDate = column[Date]("POST_DATE")
+
+    def user: ForeignKeyQuery[Users, (Long, String, Gender, String, String, Date)] = foreignKey("USER_ID", userId, TableQuery[Users])(_.id)
+
+    def userId = column[Long]("USER_ID")
+  }
 }
-
-/**
-  * Table row for micro blog
-  */
-class MicroBlog(tag: Tag) extends Table[(Long, Long, String, Date)](tag, "MICRO_BLOG") {
-  override def * : ProvenShape[(Long, Long, String, Date)] = (blogId, userId, content, postDate)
-
-  def blogId = column[Long]("BLOG_ID", O.PrimaryKey)
-
-  def content = column[String]("CONTENT")
-
-  def postDate = column[Date]("POST_DATE")
-
-  def user: ForeignKeyQuery[Users, (Long, String, Gender, String, String, Date)] = foreignKey("USER_ID", userId, TableQuery[Users])(_.id)
-
-  def userId = column[Long]("USER_ID")
-}
-
-
