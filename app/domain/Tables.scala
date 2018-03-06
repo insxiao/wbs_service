@@ -1,29 +1,48 @@
 import java.sql.Date
 
+import domain.{Gender, Male, Female}
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import slick.jdbc.PostgresProfile.api._
 import slick.lifted.{ForeignKeyQuery, ProvenShape}
 
-class Users(tag: Tag) extends Table[(Long, String)](tag, "USERS") {
+
+implicit val genderColumnType = MappedColumnType.base[Gender, String](gender => if (gender == Male) "M" else "F", s => if (s == "M") Male else Female)
+
+/**
+  * Users table row class
+  */
+class Users(tag: Tag) extends Table[(Long, String, Gender, String, String, Date)](tag, "USERS") {
   def id = column[Long]("USER_ID", O.PrimaryKey)
 
-  def name = column[String]("USER_NAME")
+  def name = column[String]("USERNAME")
 
-  override def * : ProvenShape[(Long, String)] = (id, name)
+  def gender = column[Gender]("GENDER")
+
+  def password = column[String]("PASSWORD")
+
+  def email = column[String]("EMAIL")
+
+  def birthday = column[Date]("BIRTHDAY")
+
+  override def * : ProvenShape[(Long, String, Gender, String, String, Date)] = (id, name, gender, password, email, birthday)
 }
 
+/**
+  * Table row for micro blog
+  */
 class MicroBlog(tag: Tag) extends Table[(Long, Long, String, Date)](tag, "MICRO_BLOG") {
-  def blogId = column[Long]("BLOG_ID", O.PrimaryKey)
+  override def * : ProvenShape[(Long, Long, String, Date)] = (blogId, userId, content, postDate)
 
-  def userId = column[Long]("USER_ID")
+  def blogId = column[Long]("BLOG_ID", O.PrimaryKey)
 
   def content = column[String]("CONTENT")
 
   def postDate = column[Date]("POST_DATE")
 
-  override def * : ProvenShape[(Long, Long, String, Date)] = (blogId, userId, content, postDate)
+  def user: ForeignKeyQuery[Users, (Long, String, Gender, String, String, Date)] = foreignKey("USER_ID", userId, TableQuery[Users])(_.id)
 
-  def user: ForeignKeyQuery[Users, (Long, String)] = foreignKey("USER_ID", userId, TableQuery[Users])(_.id)
+  def userId = column[Long]("USER_ID")
 }
 
 
