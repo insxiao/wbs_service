@@ -7,3 +7,9 @@ target
 /.settings
 /RUNNING_PID
 **.iml
+.ensime
+ensime.sbt
+/bin/
+.ensime*
+ensime*
+pc.stdout.log

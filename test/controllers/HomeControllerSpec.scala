@@ -2,9 +2,10 @@ package controllers
 
 import org.scalatestplus.play._
 import org.scalatestplus.play.guice._
+import play.api.db.slick.DatabaseConfigProvider
 import play.api.test._
 import play.api.test.Helpers._
-
+import play.api.inject.guice._
 /**
  * Add your spec here.
  * You can mock out a whole application including requests, plugins etc.
@@ -13,10 +14,15 @@ import play.api.test.Helpers._
  */
 class HomeControllerSpec extends PlaySpec with GuiceOneAppPerTest with Injecting {
 
+
   "HomeController GET" should {
 
     "render the index page from a new instance of controller" in {
-      val controller = new HomeController(stubControllerComponents())
+      val injector = baseApplicationBuilder.build().injector
+
+//      val controller = new HomeController(injector.instanceOf[DatabaseConfigProvider], stubControllerComponents())
+      val controller = injector.instanceOf[HomeController]
+
       val home = controller.index().apply(FakeRequest(GET, "/"))
 
       status(home) mustBe OK
