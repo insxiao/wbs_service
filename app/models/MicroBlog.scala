@@ -1,9 +1,9 @@
 package models
-import java.sql.Date
+import java.time.LocalDate
 
 import play.api.libs.json.Format
 
-case class MicroBlog(id: Option[Long], content: String, postDate: Date, ownerId: Long)
+case class MicroBlog(id: Option[Long], content: String, postDate: LocalDate, ownerId: Long)
 
 
 object MicroBlog {

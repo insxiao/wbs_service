@@ -1,8 +1,6 @@
 package models
 
-import java.sql.Date
-
-
+import java.time.LocalDate
 
 import User.Gender
 case class User(id: Option[Long],
@@ -10,14 +8,14 @@ case class User(id: Option[Long],
                 gender: Gender,
                 password: String,
                 email: Option[String],
-                birthday: Option[Date]) {
+                birthday: Option[LocalDate]) {
   def changeName(newName: String): User = copy(name = newName)
 
   def changePassword(newPassword: String): User = copy(password = newPassword)
 
   def changeEmail(newEmail: Option[String] = None): User = copy(email = newEmail)
 
-  def changeBirthday(newBirthday: Option[Date] = None): User = copy(birthday = newBirthday)
+  def changeBirthday(newBirthday: Option[LocalDate] = None): User = copy(birthday = newBirthday)
 }
 
 object User {
@@ -42,6 +40,7 @@ object User {
         json.validate[String] match {
           case JsSuccess("M", _) => JsSuccess(Male)
           case JsSuccess("F", _) => JsSuccess(Male)
+          case _ => JsError("""require "M" or "F"""")
         }
 
       override def writes(o: Gender): JsValue = o match {

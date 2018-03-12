@@ -4,9 +4,12 @@
 # ~~~~
 
 # An example controller showing a sample home page
-GET        /                    controllers.HomeController.index
-GET        /loadDb              controllers.HomeController.loadDb()
-GET       /user                controllers.UserController.list
-GET       /user/:id                controllers.UserController.find(id: Long)
+GET           /                    controllers.HomeController.index
+GET           /loadDb              controllers.HomeController.loadDb()
+GET           /user                controllers.UserController.list
+GET           /user/:id            controllers.UserController.find(id: Long)
+POST          /user/               controllers.UserController.create
+DELETE        /user/:id            controllers.UserController.delete(id: Long)
+
 # Map static resources from the /public folder to the /assets URL path
-GET        /assets/*file        controllers.Assets.versioned(path="/public", file: Asset)
+GET           /assets/*file        controllers.Assets.versioned(path="/public", file: Asset)

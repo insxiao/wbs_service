@@ -1,6 +1,6 @@
 package models
 
-import java.sql.Date
+import java.time.LocalDate
 import javax.inject.Inject
 
 import play.api.db.slick.DatabaseConfigProvider
@@ -19,8 +19,11 @@ class UserRepository @Inject()(private val dbConfigProvider: DatabaseConfigProvi
   /**
     * 自动转换Gender对象
     */
-  implicit val genderColumnType = MappedColumnType.base[Gender, String](gender => if (gender == Male) "M" else "F", s => if (s == "M") Male else Female)
-
+  implicit val genderColumnType: BaseColumnType[Gender] = MappedColumnType.base[Gender, String](gender => if (gender == Male) "M" else "F", s => if (s == "M") Male else Female)
+  implicit val localDateColumnType: BaseColumnType[LocalDate] = MappedColumnType.base[LocalDate, java.sql.Date](
+    java.sql.Date.valueOf(_),
+    _.toLocalDate
+  )
   /**
     * 用户表 Table Row 类
     *
@@ -41,7 +44,7 @@ class UserRepository @Inject()(private val dbConfigProvider: DatabaseConfigProvi
 
     def email = column[String]("email")
 
-    def birthday = column[Date]("birthday")
+    def birthday = column[LocalDate]("birthday")
   }
 
   private[UserRepository] val user = TableQuery[UserTable]
@@ -54,7 +57,7 @@ class UserRepository @Inject()(private val dbConfigProvider: DatabaseConfigProvi
 
     def content = column[String]("content")
 
-    def postDate = column[Date]("timestamp")
+    def postDate = column[LocalDate]("timestamp")
 
     def userId = column[Long]("user_id")
 
@@ -78,7 +81,7 @@ class UserRepository @Inject()(private val dbConfigProvider: DatabaseConfigProvi
              gender: Gender,
              password: String,
              email: Option[String] = None,
-             birthday: Option[Date] = None) : Future[User] =
+             birthday: Option[LocalDate] = None) : Future[User] =
     db.run {
       (user.map(p => (p.name, p.gender, p.password, p.email, p.birthday))
         returning user.map(_.id)
@@ -92,7 +95,7 @@ class UserRepository @Inject()(private val dbConfigProvider: DatabaseConfigProvi
     user.result
   }
 
-  def delete(id: Long) = db.run {
+  def delete(id: Long): Future[Int] = db.run {
     user.filter(_.id === id).delete
   }
 
