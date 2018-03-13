@@ -9,32 +9,36 @@ import slick.jdbc.PostgresProfile
 import scala.concurrent.{ExecutionContext, Future}
 
 class UserRepository @Inject()(private val dbConfigProvider: DatabaseConfigProvider)
-                              (implicit ec: ExecutionContext) {
+(implicit ec: ExecutionContext) extends RepositoryImplicits {
+
+  override type Profile = PostgresProfile
+
   //获取PostgresProfile配置
-  private[UserRepository] val dbConfig = dbConfigProvider.get[PostgresProfile]
+  val dbConfig = dbConfigProvider.get[PostgresProfile]
 
   import dbConfig._
   import profile.api._
   import User.{Gender, Male, Female}
   import java.sql
 
-  /**
-    * 自动转换Gender对象
-    */
-  implicit val genderColumnType: BaseColumnType[Gender] =
-    MappedColumnType.base[Gender, String](
-      gender => if (gender == Male) "M" else "F",
-      s => if (s == "M") Male else Female)
+//  /**
+//    * 自动转换Gender对象
+//    */
+//  implicit val genderColumnType: BaseColumnType[Gender] =
+//    MappedColumnType.base[Gender, String](
+//      gender => if (gender == Male) "M" else "F",
+//      s => if (s == "M") Male else Female)
+//
+//  implicit val localDateColumnType: BaseColumnType[LocalDate] =
+//    MappedColumnType.base[LocalDate, sql.Date](
+//      ld => if (ld != null) sql.Date.valueOf(ld) else null,
+//      date => if (date != null) date.toLocalDate else null)
+//
+//  implicit val localDateTimeColumnType: BaseColumnType[LocalDateTime] =
+//    MappedColumnType.base[LocalDateTime, sql.Timestamp](
+//      ldt => if (ldt != null) sql.Timestamp.valueOf(ldt) else null,
+//      timestamp => if (timestamp != null) timestamp.toLocalDateTime else null)
 
-  implicit val localDateColumnType: BaseColumnType[LocalDate] =
-    MappedColumnType.base[LocalDate, sql.Date](
-      ld => if (ld != null) sql.Date.valueOf(ld) else null,
-      date => if (date != null) date.toLocalDate else null)
-
-  implicit val localDateTimeColumnType: BaseColumnType[LocalDateTime] =
-    MappedColumnType.base[LocalDateTime, sql.Timestamp](
-      ldt => if (ldt != null) sql.Timestamp.valueOf(ldt) else null,
-      timestamp => if (timestamp != null) timestamp.toLocalDateTime else null)
   private[UserRepository] val user = TableQuery[UserTable]
   private[UserRepository] val microBlog = TableQuery[MicroBlogTable]
   private[UserRepository] val comment = TableQuery[CommentTable]

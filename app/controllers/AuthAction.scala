@@ -2,10 +2,11 @@ package controllers
 
 import models.User
 import play.api.mvc._
-import services.UserService
+import services.{AuthenticationService, UserService}
 import utils.extractors.BasicAuthorization
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Success
 
 class AuthRequest[A](val username: String, val password: String, request: Request[A])
   extends WrappedRequest[A](request)
@@ -21,19 +22,32 @@ class AuthorizationFilter(implicit val executionContext: ExecutionContext) exten
   }
 }
 
-class UserFilter(implicit val executionContext: ExecutionContext, val userService: UserService) extends ActionRefiner[AuthRequest, UserRequest] {
-  override protected def refine[A](request: AuthRequest[A]): Future[Either[Result, UserRequest[A]]] = Future {
-    userService.find(request.username).collect {
-      case Some(user) if user.password == request.password => Right(new UserRequest[A](user, request))
-      case _ => Left(Results.NotFound)
-    }.fallbackTo(Future.successful(Left(Results.NotFound)))
-  }.flatten
+class AuthenticateFilter(implicit val executionContext: ExecutionContext, val authenticationService: AuthenticationService)
+  extends ActionRefiner[AuthRequest, UserRequest] {
+  override protected def refine[A](request: AuthRequest[A]): Future[Either[Result, UserRequest[A]]] =
+    authenticationService.authenticate(request.username, request.password) transform {
+      case Success(Some(user)) => Success(Right(new UserRequest[A](user, request)))
+      case _ => Success(Left(Results.Unauthorized))
+    }
 }
 
 trait AuthorizationFunction {
   this: AbstractController =>
   implicit def executionContext: ExecutionContext
+
   implicit def userService: UserService
+
+  implicit def authenticationService: AuthenticationService
+
+  /**
+    * 提取用户名与密码
+    * @return AuthorizationFilter
+    */
   def authorizationFilter = new AuthorizationFilter
-  def userFilter = new UserFilter
+
+  /**
+    * 验证用户名密码
+    * @return AuthenticateFilter
+    */
+  def authenticateCredential = new AuthenticateFilter
 }

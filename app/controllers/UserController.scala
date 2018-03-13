@@ -6,7 +6,7 @@ import models.UserRepository
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.json.{JsError, Json, Reads}
 import play.api.mvc.{AbstractController, BodyParser, ControllerComponents}
-import services.UserService
+import services.{AuthenticationService, UserService}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
@@ -17,6 +17,8 @@ class UserController @Inject()(cc: ControllerComponents)
   extends AbstractController(cc) with AuthorizationFunction {
 
   import models.User
+
+  override implicit def authenticationService: AuthenticationService = userService
 
   def register = Action(validateUserJson[User]) async { request =>
     val user = request.body
@@ -31,7 +33,7 @@ class UserController @Inject()(cc: ControllerComponents)
     _.validate[User].asEither.left.map(e => BadRequest(JsError.toJson(e)))
   )
 
-  def login = (Action andThen authorizationFilter andThen userFilter) { request =>
+  def login = (Action andThen authorizationFilter andThen authenticateCredential) { request =>
     val user = request.user
     Ok.withSession("username" -> user.name, "user_id" -> user.id.toString)
   }

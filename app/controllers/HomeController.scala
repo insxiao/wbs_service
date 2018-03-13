@@ -5,7 +5,7 @@ import javax.inject._
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.json._
 import play.api.mvc._
-import services.UserService
+import services.{AuthenticationService, UserService}
 import slick.dbio.DBIOAction
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -58,8 +58,10 @@ class HomeController @Inject()(private val dbConfigProvider: DatabaseConfigProvi
     Ok(Json.obj("username" -> request.username, "password" -> request.password))
   }
 
-  def testUser = (Action andThen authorizationFilter andThen userFilter) {
+  def testUser = (Action andThen authorizationFilter andThen authenticateCredential) {
     request =>
       Ok(Json.toJson(request.user))
   }
+
+  override implicit def authenticationService: AuthenticationService = userService
 }
