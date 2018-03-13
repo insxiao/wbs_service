@@ -1,6 +1,6 @@
 package models
 
-import java.time.LocalDate
+import java.time.{LocalDate, LocalDateTime}
 import javax.inject.Inject
 
 import play.api.db.slick.DatabaseConfigProvider
@@ -12,18 +12,63 @@ class UserRepository @Inject()(private val dbConfigProvider: DatabaseConfigProvi
                               (implicit ec: ExecutionContext) {
   //获取PostgresProfile配置
   private[UserRepository] val dbConfig = dbConfigProvider.get[PostgresProfile]
+
   import dbConfig._
   import profile.api._
   import User.{Gender, Male, Female}
+  import java.sql
 
   /**
     * 自动转换Gender对象
     */
-  implicit val genderColumnType: BaseColumnType[Gender] = MappedColumnType.base[Gender, String](gender => if (gender == Male) "M" else "F", s => if (s == "M") Male else Female)
-  implicit val localDateColumnType: BaseColumnType[LocalDate] = MappedColumnType.base[LocalDate, java.sql.Date](
-    java.sql.Date.valueOf(_),
-    _.toLocalDate
-  )
+  implicit val genderColumnType: BaseColumnType[Gender] =
+    MappedColumnType.base[Gender, String](
+      gender => if (gender == Male) "M" else "F",
+      s => if (s == "M") Male else Female)
+
+  implicit val localDateColumnType: BaseColumnType[LocalDate] =
+    MappedColumnType.base[LocalDate, sql.Date](
+      ld => if (ld != null) sql.Date.valueOf(ld) else null,
+      date => if (date != null) date.toLocalDate else null)
+
+  implicit val localDateTimeColumnType: BaseColumnType[LocalDateTime] =
+    MappedColumnType.base[LocalDateTime, sql.Timestamp](
+      ldt => if (ldt != null) sql.Timestamp.valueOf(ldt) else null,
+      timestamp => if (timestamp != null) timestamp.toLocalDateTime else null)
+  private[UserRepository] val user = TableQuery[UserTable]
+  private[UserRepository] val microBlog = TableQuery[MicroBlogTable]
+  private[UserRepository] val comment = TableQuery[CommentTable]
+
+  def create(user: User): Future[User] = create(user.name, user.gender, user.password, user.email, user.birthday)
+
+  def create(name: String,
+             gender: Gender,
+             password: String,
+             email: Option[String] = None,
+             birthday: Option[LocalDate] = None): Future[User] =
+    db.run {
+      (user.map(p => (p.name, p.gender, p.password, p.email, p.birthday))
+        returning user.map(_.id)
+        into ((ut, id) => User(Some(id), ut._1, ut._2, ut._3, Option(ut._4), Option(ut._5)))
+        ) += (name, gender, password, email.orNull, birthday.orNull)
+    }
+
+  def list(): Future[Seq[User]] = db.run {
+    user.result
+  }
+
+  def delete(id: Long): Future[Int] = db.run {
+    user.filter(_.id === id).delete
+  }
+
+  def find(id: Long): Future[Option[User]] = db.run {
+    user.filter(_.id === id).result
+  } map (_.headOption)
+
+  def find(name: String): Future[Option[User]] = db.run {
+    user.filter(_.name === name).result
+  } map (_.headOption)
+
   /**
     * 用户表 Table Row 类
     *
@@ -47,12 +92,12 @@ class UserRepository @Inject()(private val dbConfigProvider: DatabaseConfigProvi
     def birthday = column[LocalDate]("birthday")
   }
 
-  private[UserRepository] val user = TableQuery[UserTable]
-
   /**
     * Table row for micro blog
     */
   private[UserRepository] class MicroBlogTable(tag: Tag) extends Table[MicroBlog](tag, "micro_blog") {
+    override def * = (blogId.?, content, postDate, userId) <> ((MicroBlog.apply _).tupled, MicroBlog.unapply)
+
     def blogId = column[Long]("blog_id", O.PrimaryKey, O.AutoInc)
 
     def content = column[String]("content")
@@ -60,46 +105,20 @@ class UserRepository @Inject()(private val dbConfigProvider: DatabaseConfigProvi
     def postDate = column[LocalDate]("timestamp")
 
     def userId = column[Long]("user_id")
-
-    override def * = (blogId.?, content, postDate, userId) <> ((MicroBlog.apply _).tupled, MicroBlog.unapply)
   }
-
-  private[UserRepository] val microBlog = TableQuery[MicroBlogTable]
-
 
   private[UserRepository] class CommentTable(tag: Tag) extends Table[Comment](tag, "COMMENTS") {
+    override def * = (id.?, content, stars, userId, timestamp) <> ((Comment.apply _).tupled, Comment.unapply)
+
     def id = column[Long]("comment_id", O.PrimaryKey, O.AutoInc)
+
     def content = column[String]("content")
+
     def stars = column[Int]("stars", O.Default(0))
+
     def userId = column[Long]("user_id")
-    override def * = (id.?, content, stars, userId) <> ((Comment.apply _).tupled, Comment.unapply)
+
+    def timestamp = column[LocalDateTime]("timestamp")
   }
 
-  private[UserRepository] val comment = TableQuery[CommentTable]
-
-  def create(name: String,
-             gender: Gender,
-             password: String,
-             email: Option[String] = None,
-             birthday: Option[LocalDate] = None) : Future[User] =
-    db.run {
-      (user.map(p => (p.name, p.gender, p.password, p.email, p.birthday))
-        returning user.map(_.id)
-        into ((ut, id) => User(Some(id), ut._1, ut._2, ut._3, Option(ut._4), Option(ut._5)))
-        ) += (name, gender, password, email.orNull, birthday.orNull)
-    }
-
-  def create(user: User): Future[User] = create(user.name, user.gender, user.password, user.email, user.birthday)
-
-  def list(): Future[Seq[User]] = db.run {
-    user.result
-  }
-
-  def delete(id: Long): Future[Int] = db.run {
-    user.filter(_.id === id).delete
-  }
-
-  def find(id: Long): Future[Option[User]] = db.run {
-    user.filter(_.id === id).result
-  } map (_.headOption)
 }

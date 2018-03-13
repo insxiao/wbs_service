@@ -29,12 +29,18 @@ object User {
 
   case object Female extends Gender("F")
 
+  /**
+    * 性别类
+    */
   object Gender {
 
     import play.api.libs.json._
 
     def apply(v: String): Gender = if (v == "M") Male else Female
 
+    /**
+      * JSON 序列化隐式转换对象
+      */
     implicit val GenderFormat: Format[Gender] = new Format[Gender] {
       override def reads(json: JsValue): JsResult[Gender] =
         json.validate[String] match {

@@ -12,11 +12,29 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
 @Singleton
-class UserController @Inject()(private val userService: UserService, cc: ControllerComponents)
-                              (implicit ec: ExecutionContext)
-  extends AbstractController(cc) {
+class UserController @Inject()(cc: ControllerComponents)
+                              (implicit val executionContext: ExecutionContext, val userService: UserService)
+  extends AbstractController(cc) with AuthorizationFunction {
 
   import models.User
+
+  def register = Action(validateUserJson[User]) async { request =>
+    val user = request.body
+    userService.create(user).map(user => Json.toJson(user)).map(Ok(_)).recover {
+      case _ => BadRequest(Json.obj("status" -> "failed"))
+    }
+
+    Future { Ok }
+  }
+
+  private def validateUserJson[User: Reads]: BodyParser[User] = parse.json.validate(
+    _.validate[User].asEither.left.map(e => BadRequest(JsError.toJson(e)))
+  )
+
+  def login = (Action andThen authorizationFilter andThen userFilter) { request =>
+    val user = request.user
+    Ok.withSession("username" -> user.name, "user_id" -> user.id.toString)
+  }
 
   def createUserForm = Action {
     Ok(views.html.createUser())
@@ -38,16 +56,12 @@ class UserController @Inject()(private val userService: UserService, cc: Control
 
   def create = Action(validateUserJson[User]) async { request =>
     val user: User = request.body
-    Future {
-      userService.create(user)
-    }.flatten
+    userService.create(user)
       .map(user => Ok(Json.toJson(user)))
-      .fallbackTo(Future.successful(BadRequest))
+      .recover {
+        case t: Throwable => BadRequest(t.getStackTraceString)
+      }
   }
-
-  private def validateUserJson[User: Reads]: BodyParser[User] = parse.json.validate(
-    _.validate[User].asEither.left.map(e => BadRequest(JsError.toJson(e)))
-  )
 
   def delete(id: Long) = Action async {
     userService.delete(id).map(_ => Ok).fallbackTo(Future(NoContent))

@@ -12,6 +12,7 @@ class UserRepositoryTest extends PlaySpec with GuiceOneAppPerSuite with Injectin
 
   "repository" must {
     "return user after create" in {
+      import User._
       val xiao = repository.create("xiao", Male, "123456", None, None)
       xiao.onComplete {
         case Success(user) => println(user)
