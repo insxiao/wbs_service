@@ -35,9 +35,9 @@ trait AuthorizationFunction {
   this: AbstractController =>
   implicit def executionContext: ExecutionContext
 
-  implicit def userService: UserService
+  implicit def _userService: UserService = implicitly[UserService]
 
-  implicit def authenticationService: AuthenticationService
+  implicit def _authenticationService: AuthenticationService = implicitly[AuthenticationService]
 
   /**
     * 提取用户名与密码

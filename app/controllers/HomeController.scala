@@ -63,5 +63,4 @@ class HomeController @Inject()(private val dbConfigProvider: DatabaseConfigProvi
       Ok(Json.toJson(request.user))
   }
 
-  override implicit def authenticationService: AuthenticationService = userService
 }

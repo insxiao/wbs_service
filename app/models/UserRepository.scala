@@ -39,9 +39,9 @@ class UserRepository @Inject()(private val dbConfigProvider: DatabaseConfigProvi
 //      ldt => if (ldt != null) sql.Timestamp.valueOf(ldt) else null,
 //      timestamp => if (timestamp != null) timestamp.toLocalDateTime else null)
 
-  private[UserRepository] val user = TableQuery[UserTable]
+  private[UserRepository] val users = TableQuery[UserTable]
   private[UserRepository] val microBlog = TableQuery[MicroBlogTable]
-  private[UserRepository] val comment = TableQuery[CommentTable]
+  private[UserRepository] val comments = TableQuery[CommentTable]
 
   def create(user: User): Future[User] = create(user.name, user.gender, user.password, user.email, user.birthday)
 
@@ -51,26 +51,26 @@ class UserRepository @Inject()(private val dbConfigProvider: DatabaseConfigProvi
              email: Option[String] = None,
              birthday: Option[LocalDate] = None): Future[User] =
     db.run {
-      (user.map(p => (p.name, p.gender, p.password, p.email, p.birthday))
-        returning user.map(_.id)
+      (users.map(p => (p.name, p.gender, p.password, p.email, p.birthday))
+        returning users.map(_.id)
         into ((ut, id) => User(Some(id), ut._1, ut._2, ut._3, Option(ut._4), Option(ut._5)))
         ) += (name, gender, password, email.orNull, birthday.orNull)
     }
 
   def list(): Future[Seq[User]] = db.run {
-    user.result
+    users.result
   }
 
   def delete(id: Long): Future[Int] = db.run {
-    user.filter(_.id === id).delete
+    users.filter(_.id === id).delete
   }
 
   def find(id: Long): Future[Option[User]] = db.run {
-    user.filter(_.id === id).result
+    users.filter(_.id === id).result
   } map (_.headOption)
 
   def find(name: String): Future[Option[User]] = db.run {
-    user.filter(_.name === name).result
+    users.filter(_.name === name).result
   } map (_.headOption)
 
   /**

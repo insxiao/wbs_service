@@ -18,8 +18,6 @@ class UserController @Inject()(cc: ControllerComponents)
 
   import models.User
 
-  override implicit def authenticationService: AuthenticationService = userService
-
   def register = Action(validateUserJson[User]) async { request =>
     val user = request.body
     userService.create(user).map(user => Json.toJson(user)).map(Ok(_)).recover {
