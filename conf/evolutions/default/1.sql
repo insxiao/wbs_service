@@ -1,13 +1,13 @@
-# schemas
+# SCHEMAS
 
 # --- !Ups
 CREATE TABLE IF NOT EXISTS USERS (
   "user_id"  BIGSERIAL PRIMARY KEY,
-  "username" VARCHAR(255) NOT NULL,
-  "gender"   CHAR(1)      NOT NULL,
-  "password" VARCHAR(40)  NOT NULL,
-  "email"    VARCHAR(256) NULL,
-  "birthday" TIMESTAMP    NULL
+  "username" VARCHAR(255) UNIQUE NOT NULL,
+  "gender"   CHAR(1)             NOT NULL,
+  "password" VARCHAR(40)         NOT NULL,
+  "email"    VARCHAR(256)        NULL,
+  "birthday" TIMESTAMP           NULL
 );
 
 CREATE TABLE IF NOT EXISTS MICRO_BLOG (
@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS COMMENTS (
   "timestamp"  TIMESTAMP DEFAULT current_timestamp
 )
 
-# --- !Downs
+  # --- !Downs
 
 DROP TABLE IF EXISTS USERS;
 DROP TABLE IF EXISTS MICRO_BLOG;

@@ -1,12 +1,16 @@
 package services
 
-import javax.inject.Inject
+import javax.inject.{Inject, Singleton}
 
-import models.UserRepository
+import models.Repository
 import play.api.db.slick.DatabaseConfigProvider
 
 import scala.concurrent.ExecutionContext
 
-class UserService @Inject()(private val dbConfigProvider: DatabaseConfigProvider)
+@Singleton
+class UserService @Inject()(override val repository: Repository)
                            (implicit ec: ExecutionContext)
-  extends UserRepository(dbConfigProvider)
+  extends AuthenticationService {
+
+  override implicit def executionContext: ExecutionContext = ec
+}
