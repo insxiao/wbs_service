@@ -2,7 +2,7 @@ package controllers
 
 import javax.inject.{Inject, Singleton}
 
-import models.UserRepository
+import models.Repository
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.json.{JsError, Json, Reads}
 import play.api.mvc.{AbstractController, BodyParser, ControllerComponents}
@@ -13,14 +13,14 @@ import scala.util.{Failure, Success}
 
 @Singleton
 class UserController @Inject()(cc: ControllerComponents)
-                              (implicit val executionContext: ExecutionContext, val userService: UserService)
+                              (implicit val executionContext: ExecutionContext, val repository: Repository)
   extends AbstractController(cc) with AuthorizationFunction {
 
   import models.User
 
   def register = Action(validateUserJson[User]) async { request =>
     val user = request.body
-    userService.create(user).map(user => Json.toJson(user)).map(Ok(_)).recover {
+    repository.Users.create(user).map(user => Json.toJson(user)).map(Ok(_)).recover {
       case _ => BadRequest(Json.obj("status" -> "failed"))
     }
 
@@ -41,14 +41,14 @@ class UserController @Inject()(cc: ControllerComponents)
   }
 
   def list = Action async {
-    userService.list().transform {
+    repository.Users.list().transform {
       case Success(users) => Success(Ok(Json.toJson(users)))
       case Failure(_) => Success(NoContent)
     }
   }
 
   def find(id: Long) = Action async {
-    userService.find(id).transform {
+    repository.Users.find(id).transform {
       case Success(Some(user)) => Success(Ok(Json.toJson(user)))
       case _ => Success(NoContent)
     }
@@ -56,7 +56,7 @@ class UserController @Inject()(cc: ControllerComponents)
 
   def create = Action(validateUserJson[User]) async { request =>
     val user: User = request.body
-    userService.create(user)
+    repository.Users.create(user)
       .map(user => Ok(Json.toJson(user)))
       .recover {
         case t: Throwable => BadRequest(t.getStackTraceString)
@@ -64,6 +64,6 @@ class UserController @Inject()(cc: ControllerComponents)
   }
 
   def delete(id: Long) = Action async {
-    userService.delete(id).map(_ => Ok).fallbackTo(Future(NoContent))
+    repository.Users.delete(id).map(_ => Ok).fallbackTo(Future(NoContent))
   }
 }
