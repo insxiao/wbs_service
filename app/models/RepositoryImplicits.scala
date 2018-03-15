@@ -7,6 +7,9 @@ import models.User.{Female, Gender, Male}
 import slick.basic.DatabaseConfig
 import slick.jdbc.{JdbcProfile, PostgresProfile}
 
+/**
+  * 提供数据库类型映射
+  */
 trait RepositoryImplicits {
   type Profile <: JdbcProfile
   val dbConfig: DatabaseConfig[PostgresProfile]

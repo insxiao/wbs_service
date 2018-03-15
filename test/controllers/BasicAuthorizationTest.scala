@@ -2,7 +2,7 @@ package controllers
 
 import org.scalatest.FunSuite
 import org.scalatestplus.play.PlaySpec
-import utils.extractors.{BasicAuthorization, Credential}
+import util.extractors.{BasicAuthorization, Credential}
 
 class BasicAuthorizationTest extends PlaySpec {
 

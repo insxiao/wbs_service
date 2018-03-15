@@ -1,4 +1,4 @@
-package utils.extractors
+package util.extractors
 
 object Base64 {
   def unapply(raw: String): Option[String] = {

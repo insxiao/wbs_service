@@ -1,6 +1,7 @@
 package models
 
 import java.time.{LocalDate, LocalDateTime}
+import javax.inject.Inject
 
 import models._
 import models.User.Gender
@@ -9,8 +10,8 @@ import slick.jdbc.PostgresProfile
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class Repository(private val dbConfigProvider: DatabaseConfigProvider)
-                (implicit val executionContext: ExecutionContext)
+class Repository @Inject()(val dbConfigProvider: DatabaseConfigProvider)
+                          (implicit val executionContext: ExecutionContext)
   extends RepositoryImplicits {
   self =>
   type Profile = PostgresProfile
@@ -22,11 +23,13 @@ class Repository(private val dbConfigProvider: DatabaseConfigProvider)
   private val users = TableQuery[UserTable]
   private val microBlogs = TableQuery[MicroBlogTable]
   private val comments = TableQuery[CommentTable]
+
   /**
     * TableRow for User schema
+    *
     * @param tag
     */
-  private class UserTable(tag: Tag) extends Table[User](tag, "users") {
+  private[Repository] class UserTable(tag: Tag) extends Table[User](tag, "users") {
 
     override def * =
       (id.?, name, gender, password, email.?, birthday.?).shaped <> ((User.apply _).tupled, User.unapply)
@@ -46,9 +49,10 @@ class Repository(private val dbConfigProvider: DatabaseConfigProvider)
 
   /**
     * TableRow for MicroBlog schema
+    *
     * @param tag
     */
-  private class MicroBlogTable(tag: Tag) extends Table[MicroBlog](tag, "micro_blog") {
+  private[Repository] class MicroBlogTable(tag: Tag) extends Table[MicroBlog](tag, "micro_blog") {
     override def * = (blogId.?, content, timestamp, userId) <> ((MicroBlog.apply _).tupled, MicroBlog.unapply)
 
     def blogId = column[Long]("blog_id", O.PrimaryKey, O.AutoInc)
@@ -62,9 +66,10 @@ class Repository(private val dbConfigProvider: DatabaseConfigProvider)
 
   /**
     * TableRow for Comment schema
+    *
     * @param tag
     */
-  private class CommentTable(tag: Tag) extends Table[Comment](tag, "COMMENTS") {
+  private[Repository] class CommentTable(tag: Tag) extends Table[Comment](tag, "COMMENTS") {
     override def * = (id.?, blogId, content, stars, userId, timestamp) <> ((Comment.apply _).tupled, Comment.unapply)
 
     /**
@@ -85,6 +90,7 @@ class Repository(private val dbConfigProvider: DatabaseConfigProvider)
 
   object Users {
     val users = self.users
+
     def create(user: User): Future[User] = create(user.name, user.gender, user.password, user.email, user.birthday)
 
     def create(name: String,
@@ -106,6 +112,9 @@ class Repository(private val dbConfigProvider: DatabaseConfigProvider)
     def delete(id: Long): Future[Int] = db.run {
       users.filter(_.id === id).delete
     }
+    def delete(username: String): Future[Int] = db.run {
+      users.filter(_.name === username).delete
+    }
 
     def find(id: Long): Future[Option[User]] = db.run {
       users.filter(_.id === id).result
@@ -114,6 +123,20 @@ class Repository(private val dbConfigProvider: DatabaseConfigProvider)
     def find(name: String): Future[Option[User]] = db.run {
       users.filter(_.name === name).result
     } map (_.headOption)
+
+
+    def exists(id: Long): Future[Boolean] = db.run {
+      users.filter(_.id === id).exists.result
+    }
+
+    def exists(name: String): Future[Boolean] = db.run {
+      users.filter(_.name === name).exists.result
+    }
+
+    def changePassword(id: Long, password: String): Future[Int] = db.run {
+      users.filter(_.id === id).map(_.password).update(password)
+    }
+
   }
 
   object MicroBlogs {
@@ -143,11 +166,13 @@ class Repository(private val dbConfigProvider: DatabaseConfigProvider)
 
   object Comments {
     val comments = self.comments
+
     def create(comment: Comment): Future[Comment] = db.run {
       (comments.map(c => (c.blogId, c.content, c.userId))
         returning comments.map(c => (c.id, c.stars, c.timestamp))
         into { case ((blogId, content, userId), (commentId, stars, timestamp)) =>
-        Comment(Some(commentId), blogId, content, stars, userId, timestamp) }
+        Comment(Some(commentId), blogId, content, stars, userId, timestamp)
+      }
         ) += (comment.blogId, comment.content, comment.userId)
     }
 
@@ -159,4 +184,5 @@ class Repository(private val dbConfigProvider: DatabaseConfigProvider)
       comments.filter(_.id === id).delete
     }
   }
+
 }

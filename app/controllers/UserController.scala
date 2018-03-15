@@ -2,10 +2,11 @@ package controllers
 
 import javax.inject.{Inject, Singleton}
 
-import models.Repository
+import models.{Repository, Token}
+import play.api.Logger
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.json.{JsError, Json, Reads}
-import play.api.mvc.{AbstractController, BodyParser, ControllerComponents}
+import play.api.mvc.{AbstractController, BodyParser, ControllerComponents, Cookie}
 import services.{AuthenticationService, UserService}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -20,11 +21,12 @@ class UserController @Inject()(cc: ControllerComponents)
 
   def register = Action(validateUserJson[User]) async { request =>
     val user = request.body
-    repository.Users.create(user).map(user => Json.toJson(user)).map(Ok(_)).recover {
-      case _ => BadRequest(Json.obj("status" -> "failed"))
+    repository.Users.create(user).map(user => Json.toJson(user)).map(Ok(_)).recoverWith {
+      case ex: Throwable => repository.Users.exists(user.name).transform {
+        case Success(true) => Success(BadRequest(Json.obj("reason" -> "user already exists")))
+        case _ => Success(ServiceUnavailable)
+      }
     }
-
-    Future { Ok }
   }
 
   private def validateUserJson[User: Reads]: BodyParser[User] = parse.json.validate(
@@ -33,7 +35,7 @@ class UserController @Inject()(cc: ControllerComponents)
 
   def login = (Action andThen authorizationFilter andThen authenticateCredential) { request =>
     val user = request.user
-    Ok.withSession("username" -> user.name, "user_id" -> user.id.toString)
+    Ok.withCookies(Cookie("token", Token(user.id.get, user.name).toCookieValue)).bakeCookies()
   }
 
   def createUserForm = Action {
