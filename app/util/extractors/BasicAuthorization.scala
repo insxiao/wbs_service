@@ -1,4 +1,4 @@
-package utils.extractors
+package util.extractors
 
 object BasicAuthorization {
   def unapply(arg: String): Option[(String, String)] = arg split " " match {

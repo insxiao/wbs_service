@@ -18,7 +18,7 @@ import slick.jdbc.PostgresProfile._
   */
 @Singleton
 class HomeController @Inject()(private val dbConfigProvider: DatabaseConfigProvider, cc: ControllerComponents)
-                              (implicit val executionContext: ExecutionContext, val userService: UserService)
+                              (implicit val executionContext: ExecutionContext, override val userService: UserService)
   extends AbstractController(cc) with AuthorizationFunction {
 
 
