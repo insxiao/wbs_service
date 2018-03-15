@@ -31,8 +31,8 @@ class TokenAuthenticate(implicit val executionContext: ExecutionContext)
 
 /**
   * 将通过Token验证的用户信息提取出来
-  * @param executionContext [[scala.concurrent.ExecutionContext]]
-  * @param userService [[services.UserService]]
+  * @param executionContext [[scala.concurrent.ExecutionContext]] execution context
+  * @param userService [[services.UserService]] user service
   */
 class TokenTransformer(implicit val executionContext: ExecutionContext, private val userService: UserService) extends ActionTransformer[TokenRequest, UserRequest] {
   override protected def transform[A](request: TokenRequest[A]): Future[UserRequest[A]] =
@@ -82,11 +82,13 @@ trait AuthorizationFunction {
   def authenticateCredential = new AuthenticateFilter
 
   // TODO
-  private def filterUser = authorizationFilter andThen authenticateCredential
+  private def filterUser: ActionFunction[Request, UserRequest] = authorizationFilter andThen authenticateCredential
 
   /**
     * authenticate with cookie token
     * @return
     */
   def tokenAuthenticate = new TokenAuthenticate
+
+  def tokenTransformer = new TokenTransformer
 }
