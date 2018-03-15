@@ -31,4 +31,6 @@ class UserService @Inject()(override val repository: Repository)
   def exists(username: String): Future[Boolean] = repository.Users.exists(username)
 
   def changePassword(id: Long, password: String): Future[Int] = repository.Users.changePassword(id, password)
+
+  def listFollowers(id: Long): Future[Seq[User]] = repository.Users.listFollowers(id)
 }

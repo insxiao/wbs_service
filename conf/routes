@@ -4,6 +4,8 @@
 # ~~~~
 
 # An example controller showing a sample home page
+
+# user controller
 GET           /                     controllers.HomeController.index
 GET           /user                 controllers.UserController.list
 GET           /user/login           controllers.UserController.login

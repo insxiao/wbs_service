@@ -88,6 +88,21 @@ class Repository @Inject()(val dbConfigProvider: DatabaseConfigProvider)
     def timestamp = column[LocalDateTime]("timestamp")
   }
 
+  /**
+    * 关注表
+    *
+    * @param tag
+    */
+  private[Repository] class FollowerTable(tag: Tag) extends Table[(Long, Long, LocalDateTime)](tag, "COMMENTS") {
+    def * = (userId, followerId, timestamp)
+
+    def userId = column[Long]("user_id")
+
+    def followerId = column[Long]("follower_id")
+
+    def timestamp = column[LocalDateTime]("timestamp")
+  }
+
   object Users {
     val users = self.users
 
@@ -112,6 +127,7 @@ class Repository @Inject()(val dbConfigProvider: DatabaseConfigProvider)
     def delete(id: Long): Future[Int] = db.run {
       users.filter(_.id === id).delete
     }
+
     def delete(username: String): Future[Int] = db.run {
       users.filter(_.name === username).delete
     }
@@ -136,6 +152,14 @@ class Repository @Inject()(val dbConfigProvider: DatabaseConfigProvider)
     def changePassword(id: Long, password: String): Future[Int] = db.run {
       users.filter(_.id === id).map(_.password).update(password)
     }
+
+    def listFollowers(id: Long): Future[Seq[User]] = Future {
+      for {
+        follower <- Followers.followers
+        user <- users
+        if follower.followerId === user.id
+      } yield user
+    }.flatMap(q => db.run(q.result))
 
   }
 
@@ -183,6 +207,26 @@ class Repository @Inject()(val dbConfigProvider: DatabaseConfigProvider)
     def delete(id: Long): Future[Int] = db.run {
       comments.filter(_.id === id).delete
     }
+  }
+
+  object Followers {
+    val followers = TableQuery[FollowerTable]
+
+    def create(userId0: Long, userId1: Long): Future[(Long, Long, LocalDateTime)] = db.run {
+      (followers.map(f => (f.userId, f.followerId))
+        returning followers.map(_.timestamp)
+        into { case ((userId, followerId), timestamp) => (userId, followerId, timestamp) }
+        ) += (userId0, userId1)
+    }
+
+    def listFollowers(userId: Long): Future[Seq[(Long, Long, LocalDateTime)]] = db.run {
+      followers.filter(_.userId === userId).sortBy(_.timestamp.desc).result
+    }
+
+    def delete(userId0: Long, userId1: Long): Future[Int] = db.run {
+      followers.filter(f => f.userId === userId0 && f.followerId === userId1).delete
+    }
+
   }
 
 }

@@ -22,6 +22,14 @@ CREATE TABLE IF NOT EXISTS COMMENTS (
   "content"    TEXT NOT NULL,
   "starts"     INT       DEFAULT 0,
   "timestamp"  TIMESTAMP DEFAULT current_timestamp
+);
+
+CREATE TABLE IF NOT EXISTS FOLLOWERS (
+  "user_id" BIGINT REFERENCES USERS ("user_id"),
+  "follower_id" BIGINT REFERENCES USERS ("user_id"),
+  "timestamp" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  CHECK ("user_id" != "follower_id"),
+  UNIQUE ("user_id", "follower_id")
 )
 
   # --- !Downs
