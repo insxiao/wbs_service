@@ -17,12 +17,9 @@ import slick.jdbc.PostgresProfile._
   * application's home page.
   */
 @Singleton
-class HomeController @Inject()(private val dbConfigProvider: DatabaseConfigProvider, cc: ControllerComponents)
+class HomeController @Inject()(cc: ControllerComponents)
                               (implicit val executionContext: ExecutionContext, override val userService: UserService)
   extends AbstractController(cc) with AuthorizationFunction {
-
-
-  lazy val db = dbConfigProvider.get.db
 
   /**
     * Create an Action to render an HTML page.
@@ -33,15 +30,6 @@ class HomeController @Inject()(private val dbConfigProvider: DatabaseConfigProvi
     */
   def index() = Action { implicit request: Request[AnyContent] =>
     Ok(views.html.index())
-  }
-
-  def loadDb(): Action[AnyContent] = Action async { implicit request: Request[AnyContent] =>
-    import slick.jdbc.PostgresProfile.api._
-    val currentDate = sql"SELECT CURRENT_TIMESTAMP ".as[java.sql.Timestamp]
-    db.run(currentDate).map(v => v(0)).transform {
-      case Success(s) => Success(Ok(s.toString))
-      case Failure(_) => Success(NoContent)
-    }
   }
 
   def allUsers() = Action async { implicit request: Request[AnyContent] =>

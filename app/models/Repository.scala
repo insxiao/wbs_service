@@ -103,6 +103,9 @@ class Repository @Inject()(val dbConfigProvider: DatabaseConfigProvider)
     def timestamp = column[LocalDateTime]("timestamp")
   }
 
+  /**
+    * user table repository object
+    */
   object Users {
     val users = self.users
 
@@ -163,6 +166,9 @@ class Repository @Inject()(val dbConfigProvider: DatabaseConfigProvider)
 
   }
 
+  /**
+    * MicroBlog table repository object
+    */
   object MicroBlogs {
     val microBlogs = self.microBlogs
 
@@ -188,6 +194,9 @@ class Repository @Inject()(val dbConfigProvider: DatabaseConfigProvider)
 
   }
 
+  /**
+    * Comment 表repository对象
+    */
   object Comments {
     val comments = self.comments
 

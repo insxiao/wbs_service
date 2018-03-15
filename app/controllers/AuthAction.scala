@@ -29,6 +29,16 @@ class TokenAuthenticate(implicit val executionContext: ExecutionContext)
   }
 }
 
+/**
+  * 将通过Token验证的用户信息提取出来
+  * @param executionContext [[scala.concurrent.ExecutionContext]]
+  * @param userService [[services.UserService]]
+  */
+class TokenTransformer(implicit val executionContext: ExecutionContext, private val userService: UserService) extends ActionTransformer[TokenRequest, UserRequest] {
+  override protected def transform[A](request: TokenRequest[A]): Future[UserRequest[A]] =
+    userService.find(request.token.id).map { case Some(user) => UserRequest(user, request)}
+}
+
 
 class AuthorizationFilter(implicit val executionContext: ExecutionContext)
   extends ActionRefiner[Request, AuthRequest] {
