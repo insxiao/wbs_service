@@ -59,6 +59,19 @@ class AuthenticateFilter(implicit val executionContext: ExecutionContext, val au
     }
 }
 
+
+/**
+  * ActionFunctions
+  * functions for login
+  *
+  * authorizationFilter Decode Authorization header and create AuthRequest
+  * authenticateCredential Authenticate username and password. And create UserRequest from AuthRequest
+  *
+  * functions for token
+  *
+  * tokenAuthenticate create TokenRequest from Cookie or Session
+  * tokenTransformer  transformer TokenRequest to UserRequest
+  */
 trait AuthorizationFunction {
   this: AbstractController =>
   implicit def executionContext: ExecutionContext
@@ -81,7 +94,7 @@ trait AuthorizationFunction {
     */
   def authenticateCredential = new AuthenticateFilter
 
-  // TODO
+  /** @todo need usage */
   private def filterUser: ActionFunction[Request, UserRequest] = authorizationFilter andThen authenticateCredential
 
   /**
