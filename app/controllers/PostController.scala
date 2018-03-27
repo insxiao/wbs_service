@@ -1,8 +1,8 @@
 package controllers
 
 import java.time.LocalDateTime
-import javax.inject.{Inject, Singleton}
 
+import javax.inject.{Inject, Singleton}
 import models.body.PostResponse
 import models.{Comment, MicroBlog, Repository}
 import play.api.db.slick.DatabaseConfigProvider
@@ -11,7 +11,7 @@ import play.api.mvc._
 import services.{CommentService, MicroBlogService, UserService}
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Success
+import scala.util.{Failure, Success}
 
 @Singleton
 class PostController @Inject()(cc: ControllerComponents)
@@ -71,6 +71,7 @@ class PostController @Inject()(cc: ControllerComponents)
     microBlogService.find(id).transform {
       case Success(Some(post)) => Success(Ok(Json.toJson(post)))
       case Success(None) => Success(NoContent)
+      case _ => Failure(new NoSuchElementException)
     }.recover { case _ => InternalServerError }
   }
 

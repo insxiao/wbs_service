@@ -59,7 +59,7 @@ class Repository @Inject()(val dbConfigProvider: DatabaseConfigProvider)
 
     def content = column[String]("content")
 
-    def timestamp = column[LocalDate]("timestamp")
+    def timestamp = column[LocalDateTime]("timestamp")
 
     def userId = column[Long]("user_id")
   }
