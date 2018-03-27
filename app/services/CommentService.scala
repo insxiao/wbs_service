@@ -10,4 +10,5 @@ class CommentService @Inject() (val repository: Repository)
                      (implicit ec: ExecutionContext) {
 
   def comment(comment: Comment): Future[Comment] = repository.Comments.create(comment)
+
 }

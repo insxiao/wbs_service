@@ -192,6 +192,9 @@ class Repository @Inject()(val dbConfigProvider: DatabaseConfigProvider)
       microBlogs.filter(_.blogId === id).delete
     }
 
+    def mostRecently(offset: Int, size: Int): Future[Seq[MicroBlog]] = db.run {
+      microBlogs.sortBy(_.timestamp.desc).drop(offset).take(size).result
+    }
   }
 
   /**

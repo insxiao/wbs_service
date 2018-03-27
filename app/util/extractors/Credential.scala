@@ -1,6 +1,6 @@
 package util.extractors
 
-import util.encrypt.Digest
+import util.encrypt.CredentialDigest
 
 /**
   * 提取器 "username:password" => (username, password)
