@@ -10,7 +10,9 @@ GET           /                      controllers.HomeController.index
 GET           /users                 controllers.UserController.list
 GET           /users/login           controllers.UserController.login
 GET           /users/:id             controllers.UserController.find(id: Long)
++nocsrf
 POST          /users                 controllers.UserController.create
++nocsrf
 POST          /users/register        controllers.UserController.register
 DELETE        /users/:id             controllers.UserController.delete(id: Long)
 GET           /tests                 controllers.HomeController.testAuthRefiner
@@ -18,9 +20,17 @@ GET           /testUser              controllers.HomeController.testUser
 
 # /posts?offset=0&size=10
 GET           /posts                 controllers.PostController.top(offset: Int ?= 0, size: Int ?= 20, userId: Option[Long])
-+ nocsrf
++nocsrf
 POST          /posts                 controllers.PostController.create
 GET           /posts/:id             controllers.PostController.find(id: Long)
+
++nocsrf
+POST          /comments              controllers.PostController.comment
+GET           /comments              controllers.CommentController.allComments(blogId: Long, offset: Int ?= 0, size: Int ?= 20)
+
++nocsrf
+POST          /upload                controllers.ImageController.upload
+GET           /upload/:uuid                controllers.ImageController.find(uuid: String)
 
 # Map static resources from the /public folder to the /assets URL path
 GET           /assets/*file          controllers.Assets.versioned(path="/public", file: Asset)

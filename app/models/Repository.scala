@@ -69,7 +69,7 @@ class Repository @Inject()(val dbConfigProvider: DatabaseConfigProvider)
     *
     * @param tag
     */
-  private[Repository] class CommentTable(tag: Tag) extends Table[Comment](tag, "COMMENTS") {
+  private[Repository] class CommentTable(tag: Tag) extends Table[Comment](tag, "comments") {
     override def * = (id.?, blogId, content, stars, userId, timestamp) <> ((Comment.apply _).tupled, Comment.unapply)
 
     /**
@@ -216,9 +216,17 @@ class Repository @Inject()(val dbConfigProvider: DatabaseConfigProvider)
       comments.filter(_.id === id).sortBy(_.timestamp.desc).result
     }
 
+    def findByBlogId(id: Long, offset: Int, size: Int): Future[Seq[Comment]] = db.run {
+      comments.filter(_.blogId === id).sortBy(_.timestamp.desc).drop(offset).take(size).result
+    }
+
     def delete(id: Long): Future[Int] = db.run {
       comments.filter(_.id === id).delete
     }
+
+    def find(id: Long): Future[Option[Comment]] = db.run {
+      comments.filter(_.id === id).result
+    }.map(_.headOption)
   }
 
   object Followers {
