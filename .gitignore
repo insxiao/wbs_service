@@ -13,3 +13,4 @@ ensime.sbt
 .ensime*
 ensime*
 pc.stdout.log
+.sbtopts

@@ -26,7 +26,7 @@ object Ex {
   }
 
   implicit class Sha1Hash(val s: String) {
-    private val N = "0123456789ABCDEF".toLowerCase.toCharArray
+    private val N = "0123456789abcdef".toCharArray
     def sha1: String = {
       val messageDigest = java.security.MessageDigest.getInstance("sha1")
       val hash = messageDigest.digest(s.getBytes())

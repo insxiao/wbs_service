@@ -59,7 +59,7 @@ class Repository @Inject()(val dbConfigProvider: DatabaseConfigProvider)
 
     def content = column[String]("content")
 
-    def timestamp = column[LocalDate]("timestamp")
+    def timestamp = column[LocalDateTime]("timestamp")
 
     def userId = column[Long]("user_id")
   }
@@ -69,7 +69,7 @@ class Repository @Inject()(val dbConfigProvider: DatabaseConfigProvider)
     *
     * @param tag
     */
-  private[Repository] class CommentTable(tag: Tag) extends Table[Comment](tag, "COMMENTS") {
+  private[Repository] class CommentTable(tag: Tag) extends Table[Comment](tag, "comments") {
     override def * = (id.?, blogId, content, stars, userId, timestamp) <> ((Comment.apply _).tupled, Comment.unapply)
 
     /**
@@ -103,6 +103,9 @@ class Repository @Inject()(val dbConfigProvider: DatabaseConfigProvider)
     def timestamp = column[LocalDateTime]("timestamp")
   }
 
+  /**
+    * user table repository object
+    */
   object Users {
     val users = self.users
 
@@ -163,6 +166,9 @@ class Repository @Inject()(val dbConfigProvider: DatabaseConfigProvider)
 
   }
 
+  /**
+    * MicroBlog table repository object
+    */
   object MicroBlogs {
     val microBlogs = self.microBlogs
 
@@ -186,8 +192,14 @@ class Repository @Inject()(val dbConfigProvider: DatabaseConfigProvider)
       microBlogs.filter(_.blogId === id).delete
     }
 
+    def mostRecently(offset: Int, size: Int): Future[Seq[MicroBlog]] = db.run {
+      microBlogs.sortBy(_.timestamp.desc).drop(offset).take(size).result
+    }
   }
 
+  /**
+    * Comment 表repository对象
+    */
   object Comments {
     val comments = self.comments
 
@@ -204,9 +216,17 @@ class Repository @Inject()(val dbConfigProvider: DatabaseConfigProvider)
       comments.filter(_.id === id).sortBy(_.timestamp.desc).result
     }
 
+    def findByBlogId(id: Long, offset: Int, size: Int): Future[Seq[Comment]] = db.run {
+      comments.filter(_.blogId === id).sortBy(_.timestamp.desc).drop(offset).take(size).result
+    }
+
     def delete(id: Long): Future[Int] = db.run {
       comments.filter(_.id === id).delete
     }
+
+    def find(id: Long): Future[Option[Comment]] = db.run {
+      comments.filter(_.id === id).result
+    }.map(_.headOption)
   }
 
   object Followers {

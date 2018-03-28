@@ -17,26 +17,26 @@ class UserController @Inject()(cc: ControllerComponents)
                               (implicit val executionContext: ExecutionContext, override val userService: UserService)
   extends AbstractController(cc) with AuthorizationFunction {
 
+  private val logger = Logger(classOf[UserController])
   import models.User
 
-  def register: Action[User] = Action(validateUserJson[User]) async { request =>
+  def register: Action[User] = Action(validateUserJson) async { request =>
     val user = request.body
     userService.create(user).map(user => Json.toJson(user)).map(Ok(_)).recoverWith {
       case ex: Throwable => userService.exists(user.name).transform {
-        case Success(true) => Success(BadRequest(Json.obj("reason" -> "user already exists")))
-        case _ => Success(ServiceUnavailable)
+        case Success(true) => Success(Conflict(Json.obj("reason" -> "user already exists")))
+        case _ => Success(InternalServerError)
       }
     }
   }
 
-  private def validateUserJson[User: Reads]: BodyParser[User] = parse.json.validate(
+  private def validateUserJson: BodyParser[User] = parse.json.validate(
     _.validate[User].asEither.left.map(e => BadRequest(JsError.toJson(e)))
   )
 
   def login: Action[AnyContent] = (Action andThen authorizationFilter andThen authenticateCredential) { request =>
     val user = request.user
-//    Ok.withCookies(Cookie("token", Token(user.id.get, user.name).toCookieValue)).bakeCookies()
-    Ok.withSession("token" -> Token(user.id.get, user.name).toTokenString)
+    Ok.withCookies(Cookie("token", Token(user.id.get, user.name).toTokenString)).bakeCookies()
   }
 
   def createUserForm = Action {
@@ -50,19 +50,19 @@ class UserController @Inject()(cc: ControllerComponents)
     }
   }
 
-  def find(id: Long): Action[AnyContent] = Action async {
+  def find(id: Long): Action[AnyContent] = (Action andThen tokenAuthenticate) async { request =>
     userService.find(id).transform {
       case Success(Some(user)) => Success(Ok(Json.toJson(user)))
       case _ => Success(NoContent)
     }
   }
 
-  def create: Action[User] = Action(validateUserJson[User]) async { request =>
+  def create: Action[User] = Action(validateUserJson) async { request =>
     val user: User = request.body
     userService.create(user)
       .map(user => Ok(Json.toJson(user)))
       .recover {
-        case t: Throwable => BadRequest(t.getStackTraceString)
+        case t: Throwable => BadRequest
       }
   }
 

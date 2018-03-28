@@ -1,6 +1,7 @@
 package controllers
 
 import models.{Token, User}
+import play.api.Logger
 import play.api.mvc._
 import services.{AuthenticationService, UserService}
 import util.extractors.{Base64, BasicAuthorization}
@@ -17,16 +18,41 @@ case class TokenRequest[A](token: Token, request: Request[A]) extends WrappedReq
 
 class TokenAuthenticate(implicit val executionContext: ExecutionContext)
   extends ActionRefiner[Request, TokenRequest] {
+  private val logger = Logger(classOf[TokenAuthenticate])
 
   import util.extractors
 
   override protected def refine[A](request: Request[A]): Future[Either[Result, TokenRequest[A]]] = Future {
-    request.cookies.get("token").map(_.value).flatMap {
-      case Base64(extractors.Token(id, name)) =>
-        Some(TokenRequest(Token(id, name), request))
-      case _ => None
-    }.toRight(Results.Unauthorized)
+    val remoteAddress = request.remoteAddress
+    request.cookies.get("token")
+      .map(_.value)
+      .map {
+        case Base64(credentials) => credentials
+      }
+      .map { v =>
+        logger.debug(s"$remoteAddress\ttoken => $v")
+        v
+      }
+      .flatMap {
+        case extractors.Token(id, name) =>
+          logger.debug(s"$remoteAddress token data $id $name")
+          Some(TokenRequest(Token(id, name), request))
+        case _ =>
+          logger.info(s"$remoteAddress authenticate failed")
+          None
+      }.toRight(Results.Unauthorized)
   }
+}
+
+/**
+  * 将通过Token验证的用户信息提取出来
+  *
+  * @param executionContext [[scala.concurrent.ExecutionContext]] execution context
+  * @param userService      [[services.UserService]] user service
+  */
+class TokenTransformer(implicit val executionContext: ExecutionContext, private val userService: UserService) extends ActionTransformer[TokenRequest, UserRequest] {
+  override protected def transform[A](request: TokenRequest[A]): Future[UserRequest[A]] =
+    userService.find(request.token.id).map { case Some(user) => UserRequest(user, request) }
 }
 
 
@@ -49,6 +75,19 @@ class AuthenticateFilter(implicit val executionContext: ExecutionContext, val au
     }
 }
 
+
+/**
+  * ActionFunctions
+  * functions for login
+  *
+  * authorizationFilter Decode Authorization header and create AuthRequest
+  * authenticateCredential Authenticate username and password. And create UserRequest from AuthRequest
+  *
+  * functions for token
+  *
+  * tokenAuthenticate create TokenRequest from Cookie or Session
+  * tokenTransformer  transformer TokenRequest to UserRequest
+  */
 trait AuthorizationFunction {
   this: AbstractController =>
   implicit def executionContext: ExecutionContext
@@ -56,6 +95,18 @@ trait AuthorizationFunction {
   implicit def userService: UserService = implicitly[UserService]
 
   implicit def authenticationService: AuthenticationService = implicitly[AuthenticationService]
+
+  /**
+    * authenticate with cookie token
+    *
+    * @return
+    */
+  def tokenAuthenticate = new TokenAuthenticate
+
+  def tokenTransformer = new TokenTransformer
+
+  /** @todo need usage */
+  private def filterUser: ActionFunction[Request, UserRequest] = authorizationFilter andThen authenticateCredential
 
   /**
     * 提取用户名与密码
@@ -70,13 +121,4 @@ trait AuthorizationFunction {
     * @return AuthenticateFilter
     */
   def authenticateCredential = new AuthenticateFilter
-
-  // TODO
-  private def filterUser = authorizationFilter andThen authenticateCredential
-
-  /**
-    * authenticate with cookie token
-    * @return
-    */
-  def tokenAuthenticate = new TokenAuthenticate
 }
