@@ -18,21 +18,18 @@ class UserController @Inject()(cc: ControllerComponents)
   extends AbstractController(cc) with AuthorizationFunction {
 
   private val logger = Logger(classOf[UserController])
+
   import models.User
 
   def register: Action[User] = Action(validateUserJson) async { request =>
     val user = request.body
     userService.create(user).map(user => Json.toJson(user)).map(Ok(_)).recoverWith {
-      case ex: Throwable => userService.exists(user.name).transform {
+      case e: Throwable => userService.exists(user.name).transform {
         case Success(true) => Success(Conflict(Json.obj("reason" -> "user already exists")))
-        case _ => Success(InternalServerError)
+        case _ => Success(InternalServerError(Json.obj("error" -> e.getMessage)))
       }
     }
   }
-
-  private def validateUserJson: BodyParser[User] = parse.json.validate(
-    _.validate[User].asEither.left.map(e => BadRequest(JsError.toJson(e)))
-  )
 
   def login: Action[AnyContent] = (Action andThen authorizationFilter andThen authenticateCredential) { request =>
     val user = request.user
@@ -65,6 +62,10 @@ class UserController @Inject()(cc: ControllerComponents)
         case t: Throwable => BadRequest
       }
   }
+
+  private def validateUserJson: BodyParser[User] = parse.json.validate(
+    _.validate[User].asEither.left.map(e => BadRequest(JsError.toJson(e)))
+  )
 
   def delete(id: Long): Action[AnyContent] = Action async {
     userService.delete(id).map(_ => Ok).fallbackTo(Future(NoContent))

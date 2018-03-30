@@ -30,7 +30,8 @@ GET           /comments              controllers.CommentController.allComments(b
 
 +nocsrf
 POST          /upload                controllers.ImageController.upload
-GET           /upload/:uuid                controllers.ImageController.find(uuid: String)
+GET           /upload/:uuid          controllers.ImageController.find(uuid: String)
+GET           /avatar/:uuid          controllers.ImageController.find(uuid: String)
 
 # Map static resources from the /public folder to the /assets URL path
 GET           /assets/*file          controllers.Assets.versioned(path="/public", file: Asset)

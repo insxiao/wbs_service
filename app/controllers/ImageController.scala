@@ -33,8 +33,7 @@ class ImageController @Inject()(val cc: ControllerComponents, val config: Config
 
       val temporaryFile = request.body
 
-      val is = new FileInputStream(temporaryFile.path.toFile)
-      val iis = ImageIO.createImageInputStream(is)
+      val iis = ImageIO.createImageInputStream(temporaryFile.path.toFile)
       try {
         val readers = ImageIO.getImageReaders(iis)
         if (readers.hasNext) {
@@ -44,7 +43,7 @@ class ImageController @Inject()(val cc: ControllerComponents, val config: Config
           UnprocessableEntity
         }
       } finally {
-        iis.close()
+        iis.clone()
       }
     }
   }
