@@ -32,7 +32,7 @@ class Repository @Inject()(val dbConfigProvider: DatabaseConfigProvider)
   private[Repository] class UserTable(tag: Tag) extends Table[User](tag, "users") {
 
     override def * =
-      (id.?, name, gender, password, email.?, birthday.?).shaped <> ((User.apply _).tupled, User.unapply)
+      (id.?, name, gender, password, email.?, birthday.?, avatar.?).shaped <> ((User.apply _).tupled, User.unapply)
 
     def id = column[Long]("user_id", O.PrimaryKey, O.AutoInc)
 
@@ -45,6 +45,8 @@ class Repository @Inject()(val dbConfigProvider: DatabaseConfigProvider)
     def email = column[String]("email")
 
     def birthday = column[LocalDate]("birthday")
+
+    def avatar = column[String]("avatar")
   }
 
   /**
@@ -109,18 +111,20 @@ class Repository @Inject()(val dbConfigProvider: DatabaseConfigProvider)
   object Users {
     val users = self.users
 
-    def create(user: User): Future[User] = create(user.name, user.gender, user.password, user.email, user.birthday)
+    def create(user: User): Future[User] =
+      create(user.name, user.gender, user.password, user.email, user.birthday, user.avatar)
 
     def create(name: String,
                gender: Gender,
                password: String,
                email: Option[String] = None,
-               birthday: Option[LocalDate] = None): Future[User] =
+               birthday: Option[LocalDate] = None,
+               avatar: Option[String] = None): Future[User] =
       db.run {
-        (users.map(p => (p.name, p.gender, p.password, p.email, p.birthday))
+        (users.map(p => (p.name, p.gender, p.password, p.email, p.birthday, p.avatar))
           returning users.map(_.id)
-          into ((ut, id) => User(Some(id), ut._1, ut._2, ut._3, Option(ut._4), Option(ut._5)))
-          ) += (name, gender, password, email.orNull, birthday.orNull)
+          into ((ut, id) => User(Some(id), ut._1, ut._2, ut._3, Option(ut._4), Option(ut._5), Option(ut._6)))
+          ) += (name, gender, password, email.orNull, birthday.orNull, avatar.orNull)
       }
 
     def list(): Future[Seq[User]] = db.run {

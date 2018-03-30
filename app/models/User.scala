@@ -8,7 +8,8 @@ case class User(id: Option[Long],
                 gender: Gender,
                 password: String,
                 email: Option[String],
-                birthday: Option[LocalDate]) {
+                birthday: Option[LocalDate],
+                avatar: Option[String]) {
   def changeName(newName: String): User = copy(name = newName)
 
   def changePassword(newPassword: String): User = copy(password = newPassword)
@@ -21,7 +22,6 @@ case class User(id: Option[Long],
 object User {
   import play.api.libs.json._
   implicit val userFormat: Format[User] = Json.format[User]
-
 
   abstract class Gender(val value: String)
 
@@ -38,7 +38,7 @@ object User {
 
     def apply(v: String): Gender = if (v == "M") Male else Female
 
-    /**
+    /**~
       * JSON 序列化隐式转换对象
       */
     implicit val GenderFormat: Format[Gender] = new Format[Gender] {
