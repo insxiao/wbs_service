@@ -47,7 +47,7 @@ class UserController @Inject()(cc: ControllerComponents)
     }
   }
 
-  def find(id: Long): Action[AnyContent] = (Action andThen tokenAuthenticate) async { request =>
+  def find(id: Long): Action[AnyContent] = (Action andThen tokenAuthenticate) async { implicit request =>
     userService.find(id).transform {
       case Success(Some(user)) => Success(Ok(Json.toJson(user)))
       case _ => Success(NoContent)
