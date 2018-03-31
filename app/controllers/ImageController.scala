@@ -43,7 +43,7 @@ class ImageController @Inject()(val cc: ControllerComponents, val config: Config
           UnprocessableEntity
         }
       } finally {
-        iis.clone()
+        iis.close()
       }
     }
   }
