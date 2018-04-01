@@ -17,8 +17,9 @@ ARG VERSION
 ARG NAME
 
 WORKDIR /root
-
 EXPOSE 8080
+
+RUN apk update && apk add bash
 
 COPY --from=builder /root/services-$VERSION.tgz /root/
 
@@ -27,4 +28,4 @@ RUN tar zxf /root/$NAME-$VERSION.tgz -C /root && \
 
 WORKDIR /root
 
-CMD ["app/bin/services"]
+CMD app/bin/services -Dplay.http.secret.key=qaz
