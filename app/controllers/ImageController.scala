@@ -38,7 +38,7 @@ class ImageController @Inject()(val cc: ControllerComponents, val config: Config
         val readers = ImageIO.getImageReaders(iis)
         if (readers.hasNext) {
           temporaryFile.moveTo(file)
-          Ok(Json.obdj("uuid" -> file.getName))
+          Ok(Json.obj("uuid" -> file.getName))
         } else {
           UnprocessableEntity
         }
