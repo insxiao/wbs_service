@@ -43,7 +43,7 @@ class UserController @Inject()(cc: ControllerComponents)
   def list: Action[AnyContent] = Action async {
     userService.list().transform {
       case Success(users) => Success(Ok(Json.toJson(users)))
-      case Failure(_) => Success(NoContent)
+      case Failure(_) => Success(Ok(Json.toJson(List.empty)))
     }
   }
 
@@ -59,7 +59,9 @@ class UserController @Inject()(cc: ControllerComponents)
     userService.create(user)
       .map(user => Ok(Json.toJson(user)))
       .recover {
-        case t: Throwable => BadRequest
+        case t: Throwable =>
+          logger.warn(s"${request.remoteAddress} error ${t.getMessage}")
+          InternalServerError
       }
   }
 

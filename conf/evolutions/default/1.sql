@@ -7,7 +7,8 @@ CREATE TABLE IF NOT EXISTS USERS (
   "gender"   CHAR(1)             NOT NULL,
   "password" VARCHAR(40)         NOT NULL,
   "email"    VARCHAR(256)        NULL,
-  "birthday" TIMESTAMP           NULL
+  "birthday" TIMESTAMP           NULL,
+  "avatar"   VARCHAR(256)        NULL
 );
 
 CREATE TABLE IF NOT EXISTS MICRO_BLOG (
