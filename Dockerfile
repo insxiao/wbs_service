@@ -17,7 +17,7 @@ ARG VERSION
 ARG NAME
 
 WORKDIR /root
-EXPOSE 8080
+EXPOSE 9000
 
 RUN apk update && apk add bash
 
