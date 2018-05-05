@@ -50,7 +50,9 @@ class ImageController @Inject()(val cc: ControllerComponents, val config: Config
 
       val targetPath = uploadPath.resolve(filename)
       picture.ref.moveTo(targetPath, replace = true)
-      logger.info(s"save file to $targetPath")
+      val path = targetPath.toFile.getAbsolutePath
+      logger.info(s"save file to $path")
+      logger.info(s"target file $path exists ${targetPath.toFile.exists()}")
       Ok(Json.obj("uuid" -> filename))
     }.getOrElse {
       UnprocessableEntity
