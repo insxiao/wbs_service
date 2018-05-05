@@ -1,9 +1,10 @@
 package services
 
 import java.time.LocalDateTime
-import javax.inject.{Inject, Singleton}
 
+import javax.inject.{Inject, Singleton}
 import models.{Repository, User}
+import play.api.Logger
 import play.api.db.slick.DatabaseConfigProvider
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -12,6 +13,8 @@ import scala.concurrent.{ExecutionContext, Future}
 class UserService @Inject()(override val repository: Repository)
                            (implicit ec: ExecutionContext)
   extends AuthenticationService {
+
+  val logger = Logger(classOf[UserService])
 
   override implicit def executionContext: ExecutionContext = ec
 
@@ -38,4 +41,7 @@ class UserService @Inject()(override val repository: Repository)
   def unfollow()(me: User, other: User): Future[Int] = repository.Followers.delete(me.id.get, other.id.get)
 
   def listFollowers(id: Long): Future[Seq[User]] = repository.Users.listFollowers(id)
+
+  def search(q: String, offset: Int = 0, size: Int = 10): Future[Seq[User]] = repository.Users.search(q, offset, size)
+
 }

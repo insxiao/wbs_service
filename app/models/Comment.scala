@@ -14,6 +14,4 @@ object Comment {
   import play.api.libs.functional.syntax._
 
   implicit val commentFormat: Format[Comment] = Json.format[Comment]
-
-
 }

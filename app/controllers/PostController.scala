@@ -3,7 +3,7 @@ package controllers
 import java.time.LocalDateTime
 
 import javax.inject.{Inject, Singleton}
-import models.body.PostResponse
+import models.body.{Next, PostResponse}
 import models.{Comment, MicroBlog, Repository}
 import play.api.Logger
 import play.api.db.slick.DatabaseConfigProvider
@@ -44,9 +44,14 @@ class PostController @Inject()(cc: ControllerComponents)
   )
 
   def top(offset: Int, size: Int, userId: Option[Long]) = Action async { request =>
-    microBlogService.mostRecently(offset, size)
+    logger.debug(s"find most recently with $offset $size $userId")
+    microBlogService.mostRecently(offset, size, userId)
       .map { blogs =>
-        PostResponse(blogs, routes.PostController.top(offset + size, size, None).url)
+        PostResponse(
+          blogs,
+          Next(
+            routes.PostController.top(offset + size, size, None).url,
+            Map("offset" -> (offset + size), "size" -> size)))
       }
       .map(Json.toJson(_))
       .map(Ok(_))
@@ -96,8 +101,20 @@ class PostController @Inject()(cc: ControllerComponents)
           ))
         case _ => NoContent
       }
-      .recover { case e: Throwable => InternalServerError(Json.obj("error" -> e.getMessage)) }
+      .recover {
+        case e: Throwable =>
+          logger.warn(s"${request.remoteAddress}  find post  ${e.getMessage}")
+          InternalServerError(Json.obj("error" -> e.getMessage))
+      }
   }
+
+  def delete(id: Long) = (Action andThen tokenAuthenticate) async
+    microBlogService.delete(id).transform {
+      case Success(n) => Success(Ok(Json.obj("delete" -> n)))
+      case Failure(e) =>
+        logger.warn(s"failed to delete post", e)
+        Success(InternalServerError)
+    }
 
   /**
     * 验证请求体并转换为Comment
