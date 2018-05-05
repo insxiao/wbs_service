@@ -42,6 +42,11 @@ class ImageController @Inject()(val cc: ControllerComponents, val config: Config
   def formUpload = Action(parse.multipartFormData) { request =>
     request.body.file("image").map { picture =>
       val filename = randomFilename
+
+      if (!uploadPath.toFile.exists()) {
+        uploadPath.toFile.mkdirs()
+      }
+
       picture.ref.moveTo(uploadPath.resolve(filename), replace = true)
       Ok(Json.obj("uuid" -> filename))
     }.getOrElse {
@@ -70,7 +75,7 @@ class ImageController @Inject()(val cc: ControllerComponents, val config: Config
   }
 
   def find(uuid: String) = Action async Future {
-    val file = Paths.get(s"$imageBaseDir/$uuid").toFile
+    val file = uploadPath.resolve(uuid).toFile
     if (file.exists())
       Ok.sendFile(file)
     else NoContent
