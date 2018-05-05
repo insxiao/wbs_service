@@ -40,6 +40,7 @@ class ImageController @Inject()(val cc: ControllerComponents, val config: Config
   private def randomFilename: String = UUID.randomUUID().toString
 
   def formUpload = Action(parse.multipartFormData) { request =>
+    logger.info(s"${getClass.getSimpleName}    upload file with form upload")
     request.body.file("image").map { picture =>
       val filename = randomFilename
 
@@ -47,7 +48,9 @@ class ImageController @Inject()(val cc: ControllerComponents, val config: Config
         uploadPath.toFile.mkdirs()
       }
 
-      picture.ref.moveTo(uploadPath.resolve(filename), replace = true)
+      val targetPath = uploadPath.resolve(filename)
+      picture.ref.moveTo(targetPath, replace = true)
+      logger.info(s"save file to $targetPath")
       Ok(Json.obj("uuid" -> filename))
     }.getOrElse {
       UnprocessableEntity
@@ -76,6 +79,7 @@ class ImageController @Inject()(val cc: ControllerComponents, val config: Config
 
   def find(uuid: String) = Action async Future {
     val file = uploadPath.resolve(uuid).toFile
+    logger.info(s"try send file ${file.getAbsolutePath.toString}")
     if (file.exists())
       Ok.sendFile(file)
     else NoContent
