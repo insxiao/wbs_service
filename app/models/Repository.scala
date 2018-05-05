@@ -1,14 +1,16 @@
 package models
 
 import java.time.{LocalDate, LocalDateTime}
-import javax.inject.Inject
 
+import javax.inject.Inject
 import models._
 import models.User.Gender
+import play.api.Logger
 import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.PostgresProfile
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Try
 
 class Repository @Inject()(val dbConfigProvider: DatabaseConfigProvider)
                           (implicit val executionContext: ExecutionContext)
@@ -111,6 +113,15 @@ class Repository @Inject()(val dbConfigProvider: DatabaseConfigProvider)
   object Users {
     val users = self.users
 
+    def search(q: String, offset: Int, size: Int): Future[Seq[User]] = db.run {
+      users.filter(u => u.name.like(s"%$q%") || u.id === Try(q.toLong)
+        .getOrElse(-1L))
+        .sortBy(_.name.asc)
+        .drop(offset)
+        .take(size)
+        .result
+    }
+
     def create(user: User): Future[User] =
       create(user.name, user.gender, user.password, user.email, user.birthday, user.avatar)
 
@@ -176,6 +187,14 @@ class Repository @Inject()(val dbConfigProvider: DatabaseConfigProvider)
   object MicroBlogs {
     val microBlogs = self.microBlogs
 
+    def search(q: String, offset: Int, size: Int): Future[Seq[MicroBlog]] = db.run {
+      microBlogs.filter(p => p.content.like(s"%$q%"))
+        .sortBy(_.timestamp.desc)
+        .drop(offset)
+        .take(size)
+        .result
+    }
+
     def create(microBlog: MicroBlog): Future[MicroBlog] = db.run {
       (microBlogs.map(mb => (mb.content, mb.timestamp, mb.userId))
         returning microBlogs.map(_.blogId)
@@ -196,8 +215,14 @@ class Repository @Inject()(val dbConfigProvider: DatabaseConfigProvider)
       microBlogs.filter(_.blogId === id).delete
     }
 
-    def mostRecently(offset: Int, size: Int): Future[Seq[MicroBlog]] = db.run {
-      microBlogs.sortBy(_.timestamp.desc).drop(offset).take(size).result
+    def mostRecently(offset: Int, size: Int, userId: Option[Long]): Future[Seq[MicroBlog]] = db.run {
+      userId match {
+        case Some(id) =>
+          Logger.debug(s"most recently post with userId $id")
+          microBlogs.filter(_.userId === id).sortBy(_.timestamp.desc).drop(offset).take(size).result
+        case None => microBlogs.sortBy(_.timestamp.desc).drop(offset).take(size).result
+      }
+
     }
   }
 

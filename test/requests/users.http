@@ -7,7 +7,6 @@
 
 GET http://localhost:9000/users
 Accepts: application/json
-Content-Type: application/json
 
 ###
 
@@ -23,22 +22,22 @@ Content-Type: application/json
 
 ###
 
-GET http://localhost:9000/search?type=user&q=1
+GET http://localhost:9000/users/login
+Accepts: application/json
+Authorization: Basic emVybzoxMjM0NTY
+###
+
+GET http://localhost:9000/users/1
+Accepts: application/json
+Cookie: token=MTp6ZXJvOjE5MjMxMWEwNzUwNDA0MWUzYTQzMjAxNTFhZjMyYjM2ZDM5ZTMxOTA=; Path=/; HTTPOnly
+###
+
+GET http://localhost:9000/users/exists/zzzzzz
 Accepts: application/json
 
 ###
 
-GET http://localhost:9000/search?type=post&q=z
-Accepts: application/json
-
-###
-
-GET http://localhost:9000/posts?userId=1
-Accepts: application/json
-
-###
-
-GET http://localhost:9000/posts/1
+GET http://localhost:9000/users/1
 Accepts: application/json
 
 ###

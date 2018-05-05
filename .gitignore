@@ -14,3 +14,4 @@ ensime.sbt
 ensime*
 pc.stdout.log
 .sbtopts
+uploads

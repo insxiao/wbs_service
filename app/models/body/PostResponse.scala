@@ -1,11 +1,10 @@
 package models.body
 
 import models.MicroBlog
-import play.api.libs.json.{Format, Json}
+import play.api.libs.json.{Format, Json, Writes}
 
-case class PostResponse(posts: Seq[MicroBlog], next: String)
-
+case class PostResponse(posts: Seq[MicroBlog], next: Next)
 
 object PostResponse {
-  implicit val PostResponseFormat: Format[PostResponse] = Json.format[PostResponse]
+  implicit val PostResponseWrites: Writes[PostResponse] = Json.writes[PostResponse]
 }

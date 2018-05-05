@@ -21,19 +21,15 @@ class UserController @Inject()(cc: ControllerComponents)
 
   import models.User
 
-  def register: Action[User] = Action(validateUserJson) async { request =>
-    val user = request.body
-    userService.create(user).map(user => Json.toJson(user)).map(Ok(_)).recoverWith {
-      case e: Throwable => userService.exists(user.name).transform {
-        case Success(true) => Success(Conflict(Json.obj("reason" -> "user already exists")))
-        case _ => Success(InternalServerError(Json.obj("error" -> e.getMessage)))
-      }
-    }
+  def exists(name: String) = Action async userService.exists(name).transform {
+    case Success(true) => Success(Ok("exists"))
+    case Success(false) => Success(Ok("not exists"))
+    case _ => Success(InternalServerError)
   }
 
   def login: Action[AnyContent] = (Action andThen authorizationFilter andThen authenticateCredential) { request =>
     val user = request.user
-    Ok.withCookies(Cookie("token", Token(user.id.get, user.name).toTokenString)).bakeCookies()
+    Ok(Json.toJson(user)).withCookies(Cookie("token", Token(user.id.get, user.name).toTokenString)).bakeCookies()
   }
 
   def createUserForm = Action {
@@ -43,13 +39,19 @@ class UserController @Inject()(cc: ControllerComponents)
   def list: Action[AnyContent] = Action async {
     userService.list().transform {
       case Success(users) => Success(Ok(Json.toJson(users)))
-      case Failure(_) => Success(Ok(Json.toJson(List.empty)))
+      case Failure(_) => Success(Ok(Json.toJson(List.empty[User])))
     }
   }
 
-  def find(id: Long): Action[AnyContent] = (Action andThen tokenAuthenticate) async { implicit request =>
+  def find(id: Long): Action[AnyContent] = Action async { implicit request =>
+    logger.info(s"${request.remoteAddress} fetch user info with user id $id")
     userService.find(id).transform {
-      case Success(Some(user)) => Success(Ok(Json.toJson(user)))
+      case Success(Some(user)) => Success(Ok(Json.obj("id" -> user.id,
+        "name" -> user.name,
+        "gender" -> user.gender,
+        "email" -> user.email,
+        "birthday" -> user.birthday,
+        "avatar" -> user.avatar)))
       case _ => Success(NoContent)
     }
   }
@@ -58,11 +60,14 @@ class UserController @Inject()(cc: ControllerComponents)
     val user: User = request.body
     userService.create(user)
       .map(user => Ok(Json.toJson(user)))
-      .recover {
+      .recoverWith({
         case t: Throwable =>
           logger.warn(s"${request.remoteAddress} error ${t.getMessage}")
-          InternalServerError
-      }
+          userService.exists(user.name).transform {
+            case Success(true) => Success(Conflict(Json.obj("reason" -> s"user ${user.name} already exists")))
+            case _ => Success(InternalServerError(t.getMessage))
+          }
+      })
   }
 
   private def validateUserJson: BodyParser[User] = parse.json.validate(
