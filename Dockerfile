@@ -18,7 +18,7 @@ ARG NAME
 
 WORKDIR /root
 
-EXPOSE 8080
+EXPOSE 9000
 
 COPY --from=builder /root/services-$VERSION.tgz /root/
 
