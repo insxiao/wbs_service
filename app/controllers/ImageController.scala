@@ -1,7 +1,7 @@
 package controllers
 
 import java.io.{File, FileInputStream}
-import java.nio.file.{Path, Paths}
+import java.nio.file.{Files, Path, Paths}
 import java.util.UUID
 
 import javax.imageio.ImageIO
@@ -44,15 +44,15 @@ class ImageController @Inject()(val cc: ControllerComponents, val config: Config
     request.body.file("image").map { picture =>
       val filename = randomFilename
 
-      if (!uploadPath.toFile.exists()) {
-        uploadPath.toFile.mkdirs()
+      if (!Files.exists(uploadPath) && Files.notExists(uploadPath)) {
+        Files.createDirectories(uploadPath)
       }
 
       val targetPath = uploadPath.resolve(filename)
       picture.ref.moveTo(targetPath, replace = true)
-      val path = targetPath.toFile.getAbsolutePath
+      val path = targetPath.toAbsolutePath
       logger.info(s"save file to $path")
-      logger.info(s"target file $path exists ${path.exists()}")
+      logger.info(s"target file $path exists ${Files.exists(path)}")
       Ok(Json.obj("uuid" -> filename))
     }.getOrElse {
       UnprocessableEntity
@@ -80,10 +80,10 @@ class ImageController @Inject()(val cc: ControllerComponents, val config: Config
   }
 
   def find(uuid: String) = Action async Future {
-    val file = uploadPath.resolve(uuid).toFile
-    logger.info(s"try send file ${file.getAbsolutePath.toString}")
-    if (file.getAbsoluteFile.exists())
-      Ok.sendFile(file)
+    val file = uploadPath.resolve(uuid)
+    logger.info(s"try send file ${file.toAbsolutePath.toString}")
+    if (Files.exists(file.toAbsolutePath))
+      Ok.sendFile(file.toFile.getAbsoluteFile)
     else NoContent
   }
 }
