@@ -25,6 +25,7 @@ class Repository @Inject()(val dbConfigProvider: DatabaseConfigProvider)
   private val users = TableQuery[UserTable]
   private val microBlogs = TableQuery[MicroBlogTable]
   private val comments = TableQuery[CommentTable]
+  private val follows = TableQuery[FollowTable]
 
   /**
     * TableRow for User schema
@@ -97,7 +98,7 @@ class Repository @Inject()(val dbConfigProvider: DatabaseConfigProvider)
     *
     * @param tag
     */
-  private[Repository] class FollowerTable(tag: Tag) extends Table[(Long, Long, LocalDateTime)](tag, "COMMENTS") {
+  private[Repository] class FollowTable(tag: Tag) extends Table[(Long, Long, LocalDateTime)](tag, "follows") {
     def * = (userId, followerId, timestamp)
 
     def userId = column[Long]("user_id")
@@ -173,12 +174,19 @@ class Repository @Inject()(val dbConfigProvider: DatabaseConfigProvider)
 
     def listFollowers(id: Long): Future[Seq[User]] = Future {
       for {
-        follower <- Followers.followers
-        user <- users
-        if follower.followerId === user.id
+        follow <- follows
+        if follow.userId === id
+        user <- users if user.id === follow.followerId
       } yield user
     }.flatMap(q => db.run(q.result))
 
+    def listFollows(id: Long): Future[Seq[User]] = Future {
+      for {
+        follow <- follows
+        if follow.followerId === id
+        user <- users if user.id === follow.userId
+      } yield user
+    }.flatMap(q => db.run(q.result))
   }
 
   /**
@@ -258,22 +266,22 @@ class Repository @Inject()(val dbConfigProvider: DatabaseConfigProvider)
     }.map(_.headOption)
   }
 
-  object Followers {
-    val followers = TableQuery[FollowerTable]
+  object Follows {
+    val follows = TableQuery[FollowTable]
 
-    def create(userId0: Long, userId1: Long): Future[(Long, Long, LocalDateTime)] = db.run {
-      (followers.map(f => (f.userId, f.followerId))
-        returning followers.map(_.timestamp)
-        into { case ((userId, followerId), timestamp) => (userId, followerId, timestamp) }
-        ) += (userId0, userId1)
+    def follow(userId: Long, followedId: Long): Future[(Long, Long, LocalDateTime)] = db.run {
+      (follows.map(f => (f.userId, f.followerId))
+        returning follows.map(_.timestamp)
+        into { case ((userId, followId), timestamp) => (userId, followId, timestamp) }
+        ) += (followedId, userId)
     }
 
     def listFollowers(userId: Long): Future[Seq[(Long, Long, LocalDateTime)]] = db.run {
-      followers.filter(_.userId === userId).sortBy(_.timestamp.desc).result
+      follows.filter(_.userId === userId).sortBy(_.timestamp.desc).result
     }
 
-    def delete(userId0: Long, userId1: Long): Future[Int] = db.run {
-      followers.filter(f => f.userId === userId0 && f.followerId === userId1).delete
+    def delete(userId: Long, followedId: Long): Future[Int] = db.run {
+      follows.filter(f => f.userId === followedId && f.followerId === userId).delete
     }
 
   }

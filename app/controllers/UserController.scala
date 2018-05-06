@@ -77,12 +77,4 @@ class UserController @Inject()(cc: ControllerComponents)
   def delete(id: Long): Action[AnyContent] = Action async {
     userService.delete(id).map(_ => Ok).fallbackTo(Future(NoContent))
   }
-
-  def listFollowers: Action[AnyContent] = (Action andThen tokenAuthenticate) async { request =>
-    userService.exists(request.token.id).flatMap { _ =>
-      userService.listFollowers(request.token.id).map(Json.toJson(_)).map {
-        Ok(_)
-      }
-    }.fallbackTo(Future.successful(BadRequest("user not exists")))
-  }
 }

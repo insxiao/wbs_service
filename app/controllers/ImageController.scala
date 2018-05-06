@@ -52,7 +52,7 @@ class ImageController @Inject()(val cc: ControllerComponents, val config: Config
       picture.ref.moveTo(targetPath, replace = true)
       val path = targetPath.toFile.getAbsolutePath
       logger.info(s"save file to $path")
-      logger.info(s"target file $path exists ${targetPath.toFile.exists()}")
+      logger.info(s"target file $path exists ${path.exists()}")
       Ok(Json.obj("uuid" -> filename))
     }.getOrElse {
       UnprocessableEntity
@@ -82,7 +82,7 @@ class ImageController @Inject()(val cc: ControllerComponents, val config: Config
   def find(uuid: String) = Action async Future {
     val file = uploadPath.resolve(uuid).toFile
     logger.info(s"try send file ${file.getAbsolutePath.toString}")
-    if (file.exists())
+    if (file.getAbsoluteFile.exists())
       Ok.sendFile(file)
     else NoContent
   }
