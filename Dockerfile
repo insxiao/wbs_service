@@ -24,6 +24,7 @@ RUN apk update && apk add bash
 COPY --from=builder /root/services-$VERSION.tgz /root/
 
 RUN tar zxf /root/$NAME-$VERSION.tgz -C /root && \
+    rm /root/$NAME-$VERSION.tgz && \
     mv $NAME-$VERSION app
 
 WORKDIR /root
