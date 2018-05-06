@@ -230,7 +230,6 @@ class Repository @Inject()(val dbConfigProvider: DatabaseConfigProvider)
           microBlogs.filter(_.userId === id).sortBy(_.timestamp.desc).drop(offset).take(size).result
         case None => microBlogs.sortBy(_.timestamp.desc).drop(offset).take(size).result
       }
-
     }
   }
 
@@ -283,7 +282,5 @@ class Repository @Inject()(val dbConfigProvider: DatabaseConfigProvider)
     def delete(userId: Long, followedId: Long): Future[Int] = db.run {
       follows.filter(f => f.userId === followedId && f.followerId === userId).delete
     }
-
   }
-
 }
