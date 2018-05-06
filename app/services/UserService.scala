@@ -36,12 +36,8 @@ class UserService @Inject()(override val repository: Repository)
 
   def changePassword(id: Long, password: String): Future[Int] = repository.Users.changePassword(id, password)
 
-  def follow(me: User, other: User): Future[(Long, Long, LocalDateTime)] = repository.Followers.create(me.id.get, other.id.get)
-
-  def unfollow()(me: User, other: User): Future[Int] = repository.Followers.delete(me.id.get, other.id.get)
-
-  def listFollowers(id: Long): Future[Seq[User]] = repository.Users.listFollowers(id)
-
   def search(q: String, offset: Int = 0, size: Int = 10): Future[Seq[User]] = repository.Users.search(q, offset, size)
 
 }
+
+
