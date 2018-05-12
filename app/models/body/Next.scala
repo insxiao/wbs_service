@@ -21,7 +21,13 @@ object Next {
         case n: Float => JsNumber(n)
         case n: Double => JsNumber(n)
         case str: String => JsString(str)
-        case char: Char => JsString(char.toString)
+        case char: Char => JsString(char.toString)case n: Short => JsNumber(n)
+        case Some(n: Int) => JsNumber(n)
+        case Some(n: Long) => JsNumber(n)
+        case Some(n: Float) => JsNumber(n)
+        case Some(n: Double) => JsNumber(n)
+        case Some(str: String) => JsString(str)
+        case Some(char: Char) => JsString(char.toString)
         case _ => JsNull
       }),
       "url" -> JsString(o.url)))

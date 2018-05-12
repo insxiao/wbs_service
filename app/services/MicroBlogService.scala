@@ -12,7 +12,7 @@ class MicroBlogService @Inject()(val repository: Repository)
 
   def post(microBlog: MicroBlog): Future[MicroBlog] = repository.MicroBlogs.create(microBlog)
 
-  def mostRecently(offset: Int, size: Int, userId: Option[Long] = None): Future[Seq[MicroBlog]] = repository.MicroBlogs.mostRecently(offset, size, userId)
+  def mostRecently(offset: Int, size: Int, userId: Option[Long] = None, followerId: Option[Long] = None): Future[Seq[MicroBlog]] = repository.MicroBlogs.mostRecently(offset, size, userId, followerId)
 
   def create(microBlog: MicroBlog): Future[MicroBlog] = repository.MicroBlogs.create(microBlog)
 

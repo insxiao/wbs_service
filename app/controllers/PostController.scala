@@ -43,15 +43,15 @@ class PostController @Inject()(cc: ControllerComponents)
     _.validate[MicroBlog].asEither.left.map(e => BadRequest(JsError.toJson(e)))
   )
 
-  def top(offset: Int, size: Int, userId: Option[Long]) = Action async { request =>
-    logger.debug(s"find most recently with $offset $size $userId")
-    microBlogService.mostRecently(offset, size, userId)
+  def top(offset: Int, size: Int, userId: Option[Long], followerId: Option[Long]) = Action async { request =>
+    logger.debug(s"find most recently with $offset $size $userId $followerId")
+    microBlogService.mostRecently(offset, size, userId, followerId)
       .map { blogs =>
         PostResponse(
           blogs,
           Next(
-            routes.PostController.top(offset + size, size, None).url,
-            Map("offset" -> (offset + size), "size" -> size)))
+            routes.PostController.top(offset + size, size, userId, followerId).url,
+            Map("offset" -> (offset + size), "size" -> size, "userId" -> userId, "followerId" -> followerId)))
       }
       .map(Json.toJson(_))
       .map(Ok(_))

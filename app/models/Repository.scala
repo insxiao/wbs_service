@@ -223,7 +223,7 @@ class Repository @Inject()(val dbConfigProvider: DatabaseConfigProvider)
       microBlogs.filter(_.blogId === id).delete
     }
 
-    def mostRecently(offset: Int, size: Int, userId: Option[Long]): Future[Seq[MicroBlog]] = db.run {
+    def mostRecently(offset: Int, size: Int, userId: Option[Long], followerId: Option[Long]): Future[Seq[MicroBlog]] = db.run {
       userId match {
         case Some(id) =>
           Logger.debug(s"most recently post with userId $id")
@@ -231,6 +231,19 @@ class Repository @Inject()(val dbConfigProvider: DatabaseConfigProvider)
         case None => microBlogs.sortBy(_.timestamp.desc).drop(offset).take(size).result
       }
 
+      ((userId, followerId) match {
+        case (None, None) => microBlogs
+        case (Some(uid), _) => microBlogs
+          .filter(_.userId === uid)
+        case (None, Some(fid)) =>
+          for {
+            follow <- follows if follow.followerId === fid
+            post <- microBlogs if post.userId === follow.userId
+          } yield post
+      }).sortBy(_.timestamp.desc)
+        .drop(offset)
+        .take(size)
+        .result
     }
   }
 
@@ -269,6 +282,17 @@ class Repository @Inject()(val dbConfigProvider: DatabaseConfigProvider)
   object Follows {
     val follows = TableQuery[FollowTable]
 
+    def get(userId: Long, followerId: Long): Future[Option[User]] = db.run {
+      follows.filter(f => f.userId === userId && f.followerId === followerId)
+        .flatMap(f => users.filter(_.id === f.userId)).result.headOption
+    }
+
+    def exists(userId: Long, followerId: Long): Future[Boolean] = db.run {
+      follows.filter(f => f.userId === userId && f.followerId === followerId)
+        .exists
+        .result
+    }
+
     def follow(userId: Long, followedId: Long): Future[(Long, Long, LocalDateTime)] = db.run {
       (follows.map(f => (f.userId, f.followerId))
         returning follows.map(_.timestamp)
@@ -283,7 +307,5 @@ class Repository @Inject()(val dbConfigProvider: DatabaseConfigProvider)
     def delete(userId: Long, followedId: Long): Future[Int] = db.run {
       follows.filter(f => f.userId === followedId && f.followerId === userId).delete
     }
-
   }
-
 }
