@@ -14,7 +14,8 @@ import scala.util.{Failure, Success}
 
 @Singleton
 class UserController @Inject()(cc: ControllerComponents)
-                              (implicit val executionContext: ExecutionContext, override val userService: UserService)
+                              (implicit val executionContext: ExecutionContext,
+                               override val userService: UserService)
   extends AbstractController(cc) with AuthorizationFunction {
 
   private val logger = Logger(classOf[UserController])

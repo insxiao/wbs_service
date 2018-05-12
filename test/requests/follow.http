@@ -1,0 +1,42 @@
+# For a quick start check out our HTTP Requests collection (Tools|HTTP Client|Open HTTP Requests Collection).
+#
+# Following HTTP Request Live Templates are available:
+# * 'gtrp' and 'gtr' create a GET request with or without query parameters;
+# * 'ptr' and 'ptrp' create a POST request with a simple or parameter-like body;
+# * 'mptr' and 'fptr' create a POST request to submit a form with a text or file field (multipart/form-data);
+
+GET http://localhost:9000/posts?followerId=1
+Accept: application/json
+
+###
+
+## login with huwa
+GET http://localhost:9000/users/login
+Accept: application/json
+Authorization: Basic aHV3YToxOTYxOTY=
+###
+
+###
+GET http://localhost:9000/follows
+Accept: application/json
+Cookie: token=MjpodXdhOjliYzAwYzRlOTg5OGNkOTA4MWMxMDgwZjQ1MWE5ZTExZTNkYTg0OTM=
+###
+
+
+GET http://localhost:9000/users/login
+Accept: application/json
+Authorization: Basic emVsZGE6MTIzNDU2
+###
+
+## user 1
+GET http://localhost:9000/follows
+Accept: application/json
+Cookie: token=MTp6ZWxkYTo1M2QzYjliZDg3YjRjMmZiM2UzOTE1NDFhODJkYjljMWEwYTRjYzAz
+###
+
+## user 1
+GET http://localhost:9000/follows/2
+Accept: application/json
+Cookie: token=MTp6ZWxkYTo1M2QzYjliZDg3YjRjMmZiM2UzOTE1NDFhODJkYjljMWEwYTRjYzAz
+
+###
