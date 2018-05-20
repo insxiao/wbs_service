@@ -1,11 +1,10 @@
 package controllers
 
 import javax.inject.{Inject, Singleton}
-
 import models.{Repository, Token}
 import play.api.Logger
 import play.api.db.slick.DatabaseConfigProvider
-import play.api.libs.json.{JsError, Json, Reads}
+import play.api.libs.json.{JsError, JsValue, Json, Reads}
 import play.api.mvc._
 import services.{AuthenticationService, UserService}
 
@@ -29,6 +28,7 @@ class UserController @Inject()(cc: ControllerComponents)
   }
 
   def login: Action[AnyContent] = (Action andThen authorizationFilter andThen authenticateCredential) { request =>
+    logger.warn(s"${request.remoteAddress}  login ${request.user}")
     val user = request.user
     Ok(Json.toJson(user)).withCookies(Cookie("token", Token(user.id.get, user.name).toTokenString)).bakeCookies()
   }
@@ -69,6 +69,18 @@ class UserController @Inject()(cc: ControllerComponents)
             case _ => Success(InternalServerError(t.getMessage))
           }
       })
+  }
+
+
+  def update: Action[User] = (Action(validateUserJson) andThen tokenAuthenticate) async {
+    implicit request =>
+      val user = request.body
+      userService.update(user) transform {
+        case Success(_) => Success(Ok)
+        case Failure(e: Throwable) =>
+          logger.warn(s"${request.remoteAddress} error ${e.getMessage}")
+          Success(InternalServerError)
+      }
   }
 
   private def validateUserJson: BodyParser[User] = parse.json.validate(

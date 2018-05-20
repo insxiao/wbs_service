@@ -13,7 +13,7 @@ trait AuthenticationService {
 
   def authenticate(username: String, password: String): Future[Option[User]] = {
     repository.Users.find(username).collect {
-      case Some(user) if user.password == password => Some(user)
+      case Some(user) if user.password.contains(password) => Some(user)
       case _ => None
     }
   }

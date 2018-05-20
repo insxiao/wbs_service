@@ -7,6 +7,7 @@ import models._
 import models.User.Gender
 import play.api.Logger
 import play.api.db.slick.DatabaseConfigProvider
+import slick.jdbc
 import slick.jdbc.PostgresProfile
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -35,7 +36,7 @@ class Repository @Inject()(val dbConfigProvider: DatabaseConfigProvider)
   private[Repository] class UserTable(tag: Tag) extends Table[User](tag, "users") {
 
     override def * =
-      (id.?, name, gender, password, email.?, birthday.?, avatar.?).shaped <> ((User.apply _).tupled, User.unapply)
+      (id.?, name, gender, password.?, email.?, birthday.?, avatar.?).shaped <> ((User.apply _).tupled, User.unapply)
 
     def id = column[Long]("user_id", O.PrimaryKey, O.AutoInc)
 
@@ -128,16 +129,34 @@ class Repository @Inject()(val dbConfigProvider: DatabaseConfigProvider)
 
     def create(name: String,
                gender: Gender,
-               password: String,
+               password: Option[String],
                email: Option[String] = None,
                birthday: Option[LocalDate] = None,
                avatar: Option[String] = None): Future[User] =
       db.run {
         (users.map(p => (p.name, p.gender, p.password, p.email, p.birthday, p.avatar))
           returning users.map(_.id)
-          into ((ut, id) => User(Some(id), ut._1, ut._2, ut._3, Option(ut._4), Option(ut._5), Option(ut._6)))
-          ) += (name, gender, password, email.orNull, birthday.orNull, avatar.orNull)
+          into ((ut, id) => User(Some(id), ut._1, ut._2, Option(ut._3), Option(ut._4), Option(ut._5), Option(ut._6)))
+          ) += (name, gender, password.orNull, email.orNull, birthday.orNull, avatar.orNull)
       }
+
+    def update(user: User): Future[List[Int]] = {
+      val selectedUser = users.filter(_.id === user.id)
+      val updateNameGender = selectedUser.map(u => (u.name, u.gender)).update(user.name, user.gender)
+      val updatePassword = user.password.map { password => selectedUser.map(_.password).update(password) }
+      val updateEmail = user.email.map { email => selectedUser.map(_.email).update(email) }
+      val updateBirthday = user.birthday.map { birthday => selectedUser.map(_.birthday).update(birthday) }
+      val updateAvatar = user.avatar.map { avatar => selectedUser.map(_.avatar).update(avatar) }
+
+      val updates: List[PostgresProfile.ProfileAction[Int, NoStream, Effect.Write]] = List(updatePassword,
+        updatePassword,
+        updateEmail,
+        updateBirthday,
+        updateAvatar).flatten
+      val ios = DBIO.sequence(updateNameGender::updates)
+
+      db.run(ios)
+    }
 
     def list(): Future[Seq[User]] = db.run {
       users.result

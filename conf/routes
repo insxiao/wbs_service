@@ -13,6 +13,7 @@ GET           /users/:id             controllers.UserController.find(id: Long)
 +nocsrf
 POST          /users                 controllers.UserController.create
 DELETE        /users/:id             controllers.UserController.delete(id: Long)
+PUT           /users                 controllers.UserController.update
 
 # /posts?offset=0&size=10
 GET           /posts                 controllers.PostController.top(offset: Int ?= 0, size: Int ?= 20, userId: Option[Long], followerId: Option[Long])

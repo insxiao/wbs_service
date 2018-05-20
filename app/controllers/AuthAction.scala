@@ -58,10 +58,15 @@ class TokenTransformer(implicit val executionContext: ExecutionContext, private 
 
 class AuthorizationFilter(implicit val executionContext: ExecutionContext)
   extends ActionRefiner[Request, AuthRequest] {
+  private val logger = Logger(classOf[AuthorizationFilter])
   override protected def refine[A](request: Request[A]): Future[Either[Result, AuthRequest[A]]] = Future {
     request.headers.get("Authorization") match {
-      case Some(BasicAuthorization(username, password)) => Right(new AuthRequest[A](username, password, request))
-      case _ => Left(Results.Unauthorized)
+      case Some(BasicAuthorization(username, password)) =>
+        logger.debug(s"authorization with $username, $password")
+        Right(new AuthRequest[A](username, password, request))
+      case other =>
+        logger.debug(s"authorization filter failed with $other")
+        Left(Results.Unauthorized)
     }
   }
 }
