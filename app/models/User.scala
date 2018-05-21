@@ -6,13 +6,13 @@ import User.Gender
 case class User(id: Option[Long],
                 name: String,
                 gender: Gender,
-                password: String,
+                password: Option[String],
                 email: Option[String],
                 birthday: Option[LocalDate],
                 avatar: Option[String]) {
   def changeName(newName: String): User = copy(name = newName)
 
-  def changePassword(newPassword: String): User = copy(password = newPassword)
+  def changePassword(newPassword: String): User = copy(password = Some(newPassword))
 
   def changeEmail(newEmail: Option[String] = None): User = copy(email = newEmail)
 

@@ -1,11 +1,10 @@
 package controllers
 
 import javax.inject.{Inject, Singleton}
-
 import models.{Repository, Token}
 import play.api.Logger
 import play.api.db.slick.DatabaseConfigProvider
-import play.api.libs.json.{JsError, Json, Reads}
+import play.api.libs.json.{JsError, JsValue, Json, Reads}
 import play.api.mvc._
 import services.{AuthenticationService, UserService}
 
@@ -29,6 +28,7 @@ class UserController @Inject()(cc: ControllerComponents)
   }
 
   def login: Action[AnyContent] = (Action andThen authorizationFilter andThen authenticateCredential) { request =>
+    logger.warn(s"${request.remoteAddress}  login ${request.user}")
     val user = request.user
     Ok(Json.toJson(user)).withCookies(Cookie("token", Token(user.id.get, user.name).toTokenString)).bakeCookies()
   }
@@ -71,11 +71,54 @@ class UserController @Inject()(cc: ControllerComponents)
       })
   }
 
+
+  def update: Action[User] = (Action(validateUserJson) andThen tokenAuthenticate) async {
+    implicit request =>
+      val user = request.body
+      userService.update(user) transform {
+        case Success(_) => Success(Ok)
+        case Failure(e: Throwable) =>
+          logger.warn(s"${request.remoteAddress} error ${e.getMessage}")
+          Success(InternalServerError)
+      }
+  }
+
   private def validateUserJson: BodyParser[User] = parse.json.validate(
     _.validate[User].asEither.left.map(e => BadRequest(JsError.toJson(e)))
   )
 
   def delete(id: Long): Action[AnyContent] = Action async {
     userService.delete(id).map(_ => Ok).fallbackTo(Future(NoContent))
+  }
+
+  def passwordReset(id: Long): Action[JsValue] = (Action(parse.json) andThen tokenAuthenticate) async {
+    request =>
+      val params = request.body
+      if (id == request.token.id) {
+        (params \ "oldPassword").asOpt[String].filter(_.length > 0)
+          .zip((params \ "newPassword").asOpt[String].filter(_.length > 0)) match {
+          case (oldPassword, newPassword) :: Nil =>
+            userService.find(id).filter {
+              case None => false
+              case Some(_) => true
+            } map {
+              case Some(user) => user
+            } filter {
+              user => user.password.contains(oldPassword)
+            } flatMap { _ =>
+              userService.changePassword(id, newPassword).transform {
+                case Success(1) => Success(Ok(Json.obj("message" -> "密码修改成功")))
+                case Success(n) => Success(InternalServerError(Json.obj("message" -> "无法修改密码")))
+                case Failure(e: Throwable) =>
+                  Success(InternalServerError)
+              }
+            } recover {
+              case e: NoSuchElementException => BadRequest(Json.obj("message" -> "密码错误"))
+            }
+          case _ => Future.successful(BadRequest(Json.obj("message" -> "数据参数错误：需要oldPassword和newPassword")))
+        }
+      } else {
+        Future.successful(Unauthorized(Json.obj("message" -> "user id not match")))
+      }
   }
 }

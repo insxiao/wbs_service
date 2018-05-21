@@ -6,6 +6,7 @@ import javax.inject.{Inject, Singleton}
 import models.{Repository, User}
 import play.api.Logger
 import play.api.db.slick.DatabaseConfigProvider
+import play.api.libs.json.JsValue
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -38,6 +39,7 @@ class UserService @Inject()(override val repository: Repository)
 
   def search(q: String, offset: Int = 0, size: Int = 10): Future[Seq[User]] = repository.Users.search(q, offset, size)
 
+  def update(user: User): Future[List[Int]] = repository.Users.update(user)
 }
 
 
