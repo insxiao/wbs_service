@@ -68,6 +68,7 @@ class PostController @Inject()(cc: ControllerComponents)
   def create = (Action(validateBlogJson) andThen tokenAuthenticate) async { request =>
     val microBlog = request.body
     val token = request.token
+    logger.debug(s"new blog create request with $microBlog")
     if (token.id == microBlog.userId) {
       microBlogService.create(microBlog)
         .map(Json.toJson(_))
