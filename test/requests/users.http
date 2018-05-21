@@ -29,7 +29,6 @@ Authorization: Basic emVybzoxMjM0NTY
 
 GET http://localhost:9000/users/1
 Accepts: application/json
-Cookie: token=MTp6ZXJvOjE5MjMxMWEwNzUwNDA0MWUzYTQzMjAxNTFhZjMyYjM2ZDM5ZTMxOTA=; Path=/; HTTPOnly
 ###
 
 GET http://localhost:9000/users/exists/zzzzzz
@@ -39,5 +38,23 @@ Accepts: application/json
 
 GET http://localhost:9000/users/1
 Accepts: application/json
+
+###
+
+POST http://localhost:9000/users/8/password_rest
+Content-Type: application/json
+Cookie: token=ODp6ZXJvOmI0YjY5NzY4ZjRjMDU5ZmJhOGQzMTZlMDM2YTExMGZkNThhZmJjMmY=; Path=/; HTTPOnly
+X-Requested-With: V
+
+{
+"oldPassword": "123456",
+"newPassword": "123456"
+}
+
+###
+
+GET http://localhost:9000/follows
+Accept: application/json
+Cookie: token=ODp6ZXJvOmI0YjY5NzY4ZjRjMDU5ZmJhOGQzMTZlMDM2YTExMGZkNThhZmJjMmY=; Path=/; HTTPOnly
 
 ###

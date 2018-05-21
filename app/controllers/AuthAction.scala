@@ -47,7 +47,7 @@ class TokenAuthenticate(implicit val executionContext: ExecutionContext)
   }
 }
 
-class TokenTransform(implicit val executionContext: ExecutionContext)
+class TokenOptionTransformer(implicit val executionContext: ExecutionContext)
   extends ActionTransformer[Request, TokenOptionRequest] {
   override protected def transform[A](request: Request[A]): Future[TokenOptionRequest[A]] = Future {
     request.cookies.get("token")
@@ -127,6 +127,13 @@ trait AuthorizationFunction {
     * @return
     */
   def tokenAuthenticate = new TokenAuthenticate
+
+  /**
+    * if logged in token is some token
+    * else token is none
+    * @return
+    */
+  def tokenOptionTransformer = new TokenOptionTransformer
 
   def tokenTransformer = new TokenTransformer
 
