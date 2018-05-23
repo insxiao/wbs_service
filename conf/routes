@@ -10,7 +10,7 @@ GET           /                               controllers.HomeController.index
 GET           /users                          controllers.UserController.list
 GET           /users/login                    controllers.UserController.login
 GET           /users/:id                      controllers.UserController.find(id: Long)
-+nocsrf
+
 POST          /users                          controllers.UserController.create
 POST          /users/:id/password_rest        controllers.UserController.passwordReset(id: Long)
 DELETE        /users/:id                      controllers.UserController.delete(id: Long)
@@ -18,26 +18,26 @@ PUT           /users                          controllers.UserController.update
 
 # /posts?offset=0&size=10
 GET           /posts                          controllers.PostController.top(offset: Int ?= 0, size: Int ?= 20, userId: Option[Long], followerId: Option[Long])
-+nocsrf
+
 POST          /posts                          controllers.PostController.create
 GET           /posts/:id                      controllers.PostController.find(id: Long)
 DELETE        /posts/:id                      controllers.PostController.delete(id: Long)
 
-+nocsrf
+
 POST          /comments                       controllers.PostController.comment
 GET           /comments                       controllers.CommentController.allComments(blogId: Long, offset: Int ?= 0, size: Int ?= 20)
 
 GET           /follows/:userId                controllers.FollowController.get(userId: Long)
 GET           /follows                        controllers.FollowController.listFollows
-+nocsrf
+
 POST          /follows                        controllers.FollowController.follow
 DELETE        /follows                        controllers.FollowController.unfollow
 
 GET           /ws/notify                      controllers.NotifyController.accept
 
-+nocsrf
+
 POST          /upload                         controllers.ImageController.directUpload
-+nocsrf
+
 POST          /formUpload                     controllers.ImageController.formUpload
 GET           /upload/:uuid                   controllers.ImageController.find(uuid: String)
 GET           /avatar/:uuid                   controllers.ImageController.find(uuid: String)
